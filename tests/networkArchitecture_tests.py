@@ -88,7 +88,7 @@ class NetworkClassTests(unittest.TestCase):
         new_training_data = tuple(zip(x, y))
         learning_rate = 0.001
         ttncNw = NetworkArchitecture([3, 1], [(0,1)])
-        ttncNw.networkTraining(new_training_data, 500, learning_rate)
+        ttncNw.train_netwrok(new_training_data, 500, 50, learning_rate)
         print(ttncNw.weights, ttncNw.all_layers[1].bias)
 
 

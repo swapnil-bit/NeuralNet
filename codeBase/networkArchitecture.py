@@ -91,10 +91,20 @@ class NetworkArchitecture:
 
         return gradient_for_biases, gradient_for_weights
 
-    def networkTraining(self, training_data, max_iteration, eta):
-        for iteration in range(max_iteration):
-            gradient_for_biases, gradient_for_weights = self.back_propagate_all_layers(training_data)
-            for layer_index in range(self.number_of_layers):
-                self.all_layers[layer_index].bias -= (eta/len(training_data))*gradient_for_biases[layer_index]
-            for weight_index in range(len(self.layer_connections)):
-                self.weights[weight_index] -= (eta/len(training_data))*gradient_for_weights[weight_index]
+    def train_netwrok(self, training_data, epochs: int, batch_size: int, eta: float):
+        if batch_size == 0:
+            batch_size = len(training_data)
+        number_of_batches = int(np.floor(len(training_data)/batch_size))
+        for iteration in range(epochs):
+            random_index = np.random.choice(len(training_data), len(training_data), replace=False)
+            shuffled_training_data = [training_data[index] for index in random_index]
+            for batch_index in range(number_of_batches):
+                training_subset = shuffled_training_data[(batch_index * batch_size):((batch_index + 1) * batch_size)]
+                self.train_network_for_single_batch(training_subset, eta)
+
+    def train_network_for_single_batch(self, training_subset, eta):
+        gradient_for_biases, gradient_for_weights = self.back_propagate_all_layers(training_subset)
+        for layer_index in range(self.number_of_layers):
+            self.all_layers[layer_index].bias -= (eta/len(training_subset))*gradient_for_biases[layer_index]
+        for weight_index in range(len(self.layer_connections)):
+            self.weights[weight_index] -= (eta/len(training_subset))*gradient_for_weights[weight_index]
