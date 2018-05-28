@@ -14,9 +14,3 @@ class NetworkConfigurations:
 
     def sigmoid_derivative(self, z: np.array):
         return self.sigmoid(z)*(1-self.sigmoid(z))
-
-    def network_training(self, training_data, max_iteration, eta):
-        for iteration in range(max_iteration):
-            gradient_for_biases, gradient_for_weights = self.back_propagate_all_layers(training_data)
-            self.weights = [w - (eta/len(training_data))*gw for w, gw in zip(self.weights, gradient_for_weights)]
-            self.biases = [b - (eta/len(training_data))*gb for b, gb in zip(self.biases, gradient_for_biases)]

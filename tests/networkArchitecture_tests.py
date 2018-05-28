@@ -2,6 +2,7 @@ from codeBase.networkArchitecture import NetworkArchitecture
 import numpy as np
 import pandas as pd
 import unittest
+from sklearn.datasets.mldata import fetch_mldata
 
 
 class NetworkClassTests(unittest.TestCase):
@@ -86,10 +87,45 @@ class NetworkClassTests(unittest.TestCase):
         x = np.array(training_data[["Pclass", "Sex", "Age"]].values)
         x = x.reshape(len(training_data), 3, 1)
         new_training_data = tuple(zip(x, y))
+        # print(new_training_data[0])
         learning_rate = 0.001
         ttncNw = NetworkArchitecture([3, 1], [(0,1)])
         ttncNw.train_netwrok(new_training_data, 500, 50, learning_rate)
         print(ttncNw.weights, ttncNw.all_layers[1].bias)
 
+    def test_mnist_test(self):
+        all_data = fetch_mldata(data_home="/Users/Swapnil/Analytics/", dataname="mnist-original")
+        random_index1 = np.random.choice(len(all_data.data), 50000)
+        training_data_x = all_data.data[random_index1]/25500
+        training_data_x = training_data_x.reshape(len(training_data_x), 784, 1)
+
+        training_data_target = all_data.target[random_index1].astype(int)
+        training_data_y = np.zeros([len(training_data_target), 10, 1], dtype = int)
+        for i in range(len(training_data_target)):
+            training_data_y[i, training_data_target[i], 0] = 1
+
+        training_data = tuple(zip(training_data_x, training_data_y))
+        learning_rate = 0.5
+        epochs = 30
+        batch_size = 10
+        mnistNw = NetworkArchitecture([784, 100, 10], [(0,1), (1,2)])
+        mnistNw.train_netwrok(training_data, epochs, batch_size, learning_rate)
+
+        ## Prediction on test data
+        random_index2 = np.random.choice(len(all_data.data), 1000)
+        test_data_x = all_data.data[random_index2]/25500
+        test_data_x = test_data_x.reshape(len(test_data_x), 784, 1)
+        test_data_target = all_data.target[random_index2].astype(int)
+        output_digit = []
+        # output_array = np.zeros([1000, 10, 1], dtype = float)
+        for i in range(100):
+            mnistNw.feed_forward_all_layers(test_data_x[i])
+            output = mnistNw.all_layers[2].activated_output
+            # output_array[i] = output
+            output_digit.append(np.argmax(output))
+
+        accuracy = sum(int(x == y) for (x, y) in tuple(zip(output_digit, test_data_target)))
+        accuracy = accuracy/100
+        print(accuracy)
 
 

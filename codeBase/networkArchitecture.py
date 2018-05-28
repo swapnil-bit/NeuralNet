@@ -8,7 +8,7 @@ class NetworkArchitecture:
         self.number_of_layers = len(layer_sizes)
         self.layer_connections = layer_connections
         self.all_layers = self.create_all_layers(layer_sizes)
-        self.weights = [np.zeros([layer_sizes[to_layer], layer_sizes[from_layer]], dtype=float)
+        self.weights = [np.random.rand(layer_sizes[to_layer], layer_sizes[from_layer])
                         for from_layer, to_layer in self.layer_connections]
         self.feed_forward_sequence = self.get_feed_forward_sequence()
         self.back_propagation_sequence = list(reversed(self.feed_forward_sequence))
