@@ -10,7 +10,7 @@ class NetworkArchitecture:
         self.layer_connections = layer_connections
         self.set_predecessors_and_successors()
         self.weights = [
-            np.zeros((self.all_layers[to_layer_index].size, self.all_layers[from_layer_index].size), dtype=float)
+            np.zeros([self.all_layers[to_layer_index].size, self.all_layers[from_layer_index].size], dtype=float)
             for from_layer_index, to_layer_index in self.layer_connections]
         self.feed_forward_sequence = self.get_feed_forward_sequence()
         self.back_propagation_sequence = list(reversed(self.feed_forward_sequence))
