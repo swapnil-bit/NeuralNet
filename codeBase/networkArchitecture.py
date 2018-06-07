@@ -4,26 +4,26 @@ from codeBase.networkConfigurations import NetworkConfigurations
 
 
 class NetworkArchitecture:
-    def __init__(self, layer_sizes: [int], layer_connections: [tuple]):
-        self.number_of_layers = len(layer_sizes)
+    def __init__(self, layers: [Layer], layer_connections: [tuple]):
+        self.number_of_layers = len(layers)
+        self.all_layers = layers
         self.layer_connections = layer_connections
-        self.all_layers = self.create_all_layers(layer_sizes)
-        self.weights = [np.random.rand(layer_sizes[to_layer], layer_sizes[from_layer])
-                        for from_layer, to_layer in self.layer_connections]
+        self.set_predecessors_and_successors()
+        self.weights = [
+            np.zeros((self.all_layers[to_layer_index].size, self.all_layers[from_layer_index].size), dtype=float)
+            for from_layer_index, to_layer_index in self.layer_connections]
         self.feed_forward_sequence = self.get_feed_forward_sequence()
         self.back_propagation_sequence = list(reversed(self.feed_forward_sequence))
         self.config = NetworkConfigurations()
 
-    def create_all_layers(self, layer_sizes) -> [Layer]:
-        all_layers = list()
+    def set_predecessors_and_successors(self):
         for current_layer_index in range(self.number_of_layers):
             predecessor_list = [predecessor for (predecessor, successor) in self.layer_connections
                                 if successor == current_layer_index]
+            self.all_layers[current_layer_index].set_predecessor_list(predecessor_list)
             successor_list = [successor for (predecessor, successor) in self.layer_connections
                               if predecessor == current_layer_index]
-            layer = Layer(layer_sizes[current_layer_index], predecessor_list, successor_list)
-            all_layers.append(layer)
-        return all_layers
+            self.all_layers[current_layer_index].set_successor_list(successor_list)
 
     def get_feed_forward_sequence(self) -> [int]:
         unprocessed_layers = [x for x in range(self.number_of_layers)]
@@ -94,7 +94,7 @@ class NetworkArchitecture:
     def train_netwrok(self, training_data, epochs: int, batch_size: int, eta: float):
         if batch_size == 0:
             batch_size = len(training_data)
-        number_of_batches = int(np.floor(len(training_data)/batch_size))
+        number_of_batches = int(np.floor(len(training_data) / batch_size))
         for iteration in range(epochs):
             random_index = np.random.choice(len(training_data), len(training_data), replace=False)
             shuffled_training_data = [training_data[index] for index in random_index]
@@ -105,6 +105,6 @@ class NetworkArchitecture:
     def train_network_for_single_batch(self, training_subset, eta):
         gradient_for_biases, gradient_for_weights = self.back_propagate_all_layers(training_subset)
         for layer_index in range(self.number_of_layers):
-            self.all_layers[layer_index].bias -= (eta/len(training_subset))*gradient_for_biases[layer_index]
+            self.all_layers[layer_index].bias -= (eta / len(training_subset)) * gradient_for_biases[layer_index]
         for weight_index in range(len(self.layer_connections)):
-            self.weights[weight_index] -= (eta/len(training_subset))*gradient_for_weights[weight_index]
+            self.weights[weight_index] -= (eta / len(training_subset)) * gradient_for_weights[weight_index]
