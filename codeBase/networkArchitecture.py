@@ -36,60 +36,27 @@ class NetworkArchitecture:
                     break
         return processed_layers
 
-    def get_input_weights_of_a_layer(self, current_layer_index: int):
-        required_weight_indices = [self.layer_connections.index((predecessor, current_layer_index))
-                                   for predecessor in self.all_layers[current_layer_index].predecessors]
-        all_weights = [self.weights[weight_index] for weight_index in required_weight_indices]
-        return all_weights
-
-    def get_input_vectors_of_a_layer(self, current_layer_index: int) -> [np.array]:
-        input_vectors = [self.all_layers[predecessor].activated_output
-                         for predecessor in self.all_layers[current_layer_index].predecessors]
-        return input_vectors
-
-    def feed_forward_all_layers(self, input_vector):
-        self.all_layers[0].activated_output = input_vector
+    def feed_forward_all_layers(self, input_vectors):
+        self.all_layers[0].activated_output = input_vectors
         for current_layer_index in self.feed_forward_sequence[1:]:
             current_input_vector = self.get_input_vectors_of_a_layer(current_layer_index)
             input_weights = self.get_input_weights_of_a_layer(current_layer_index)
             self.all_layers[current_layer_index].set_linear_output(current_input_vector, input_weights)
             self.all_layers[current_layer_index].set_activated_output()
 
-    def get_output_weights_of_a_layer(self, current_layer_index: int):
-        required_weight_indices = [self.layer_connections.index((current_layer_index, successor))
-                                   for successor in self.all_layers[current_layer_index].successors]
+    def get_input_weights_of_a_layer(self, current_layer_index: int):
+        required_weight_indices = [self.layer_connections.index((predecessor, current_layer_index))
+                                   for predecessor in self.all_layers[current_layer_index].predecessors]
         all_weights = [self.weights[weight_index] for weight_index in required_weight_indices]
+        all_weights = np.concatenate(all_weights, axis=1)
         return all_weights
 
-    def get_successor_deltas_of_a_layer(self, current_layer_index: int):
-        delta_inputs = [self.all_layers[successor].delta
-                        for successor in self.all_layers[current_layer_index].successors]
-        return delta_inputs
-
-    def update_deltas_of_all_layers(self, input_vector, actual_y):
-        self.feed_forward_all_layers(input_vector)
-        output_layer_index = self.back_propagation_sequence[0]
-        predicted_y = self.all_layers[output_layer_index].activated_output
-        self.all_layers[output_layer_index].delta = self.config.get_delta_last_layer(predicted_y, actual_y)
-        for layer_index in self.back_propagation_sequence[1:]:
-            successors_deltas = self.get_successor_deltas_of_a_layer(layer_index)
-            output_weights = self.get_output_weights_of_a_layer(layer_index)
-            self.all_layers[layer_index].set_delta(successors_deltas, output_weights)
-
-    def back_propagate_all_layers(self, training_data):
-        gradient_for_biases = [np.zeros(self.all_layers[layer_index].bias.shape) for layer_index in
-                               range(self.number_of_layers)]
-        gradient_for_weights = [np.zeros(w.shape) for w in self.weights]
-        for x, actual_y in training_data:
-            self.update_deltas_of_all_layers(x, actual_y)
-            for layer_index in range(self.number_of_layers):
-                gradient_for_biases[layer_index] += self.all_layers[layer_index].delta
-            for weight_index in range(len(self.layer_connections)):
-                predecessor, successor = self.layer_connections[weight_index]
-                gradient_for_weights[weight_index] += np.dot(self.all_layers[successor].delta,
-                                                             self.all_layers[predecessor].activated_output.transpose())
-
-        return gradient_for_biases, gradient_for_weights
+    def get_input_vectors_of_a_layer(self, current_layer_index: int) -> [np.array]:
+        input_vectors = [self.all_layers[predecessor].activated_output
+                         for predecessor in self.all_layers[current_layer_index].predecessors]
+        highest_axis = input_vectors[0].ndim - 1
+        input_vectors = np.concatenate(input_vectors, axis=highest_axis)
+        return input_vectors
 
     def train_netwrok(self, training_data, epochs: int, batch_size: int, eta: float):
         if batch_size == 0:
@@ -108,3 +75,49 @@ class NetworkArchitecture:
             self.all_layers[layer_index].bias -= (eta / len(training_subset)) * gradient_for_biases[layer_index]
         for weight_index in range(len(self.layer_connections)):
             self.weights[weight_index] -= (eta / len(training_subset)) * gradient_for_weights[weight_index]
+
+    def back_propagate_all_layers(self, training_data):
+        gradient_for_biases = [np.zeros(self.all_layers[layer_index].bias.shape) for layer_index in
+                               range(self.number_of_layers)]
+        gradient_for_weights = [np.zeros(w.shape) for w in self.weights]
+
+        input_vectors = [x[0] for x in training_data]
+        input_vectors = np.concatenate(input_vectors, axis=0)
+        actual_y_vectors = [y[1] for y in training_data]
+        actual_y_vectors = np.concatenate(actual_y_vectors, axis=0)
+        self.update_deltas_of_all_layers(input_vectors, actual_y_vectors)
+
+        for layer_index in range(self.number_of_layers):
+            delta_sum = self.all_layers[layer_index].delta.sum(axis=0)
+            delta_sum = delta_sum.reshape(np.append(1, delta_sum.shape))
+            gradient_for_biases[layer_index] += delta_sum
+        for weight_index in range(len(self.layer_connections)):
+            predecessor, successor = self.layer_connections[weight_index]
+            gradient_for_weights[weight_index] += np.dot(self.all_layers[successor].delta.transpose(),
+                                                         self.all_layers[predecessor].activated_output)
+        return gradient_for_biases, gradient_for_weights
+
+    def update_deltas_of_all_layers(self, input_vectors, actual_y_vectors):
+        self.feed_forward_all_layers(input_vectors)
+        output_layer_index = self.back_propagation_sequence[0]
+        predicted_y_vectors = self.all_layers[output_layer_index].activated_output
+        self.all_layers[output_layer_index].delta = self.config.get_delta_last_layer(predicted_y_vectors,
+                                                                                     actual_y_vectors)
+        for layer_index in self.back_propagation_sequence[1:]:
+            successors_deltas = self.get_successor_deltas_of_a_layer(layer_index)
+            output_weights = self.get_output_weights_of_a_layer(layer_index)
+            self.all_layers[layer_index].set_delta(successors_deltas, output_weights)
+
+    def get_output_weights_of_a_layer(self, current_layer_index: int):
+        required_weight_indices = [self.layer_connections.index((current_layer_index, successor))
+                                   for successor in self.all_layers[current_layer_index].successors]
+        all_weights = [self.weights[weight_index] for weight_index in required_weight_indices]
+        all_weights = np.concatenate(all_weights, axis=0)
+        return all_weights
+
+    def get_successor_deltas_of_a_layer(self, current_layer_index: int):
+        delta_inputs = [self.all_layers[successor].delta
+                        for successor in self.all_layers[current_layer_index].successors]
+        highest_axis = delta_inputs[0].ndim - 1
+        delta_inputs = np.concatenate(delta_inputs, axis=highest_axis)
+        return delta_inputs

@@ -10,10 +10,10 @@ class Layer:
         self.activation_derivative = activation_derivative
         self.predecessors = []
         self.successors = []
-        self.bias = np.zeros([self.size, 1], dtype=float)
-        self.linear_output = np.zeros([self.size, 1], dtype=float)
-        self.activated_output = np.zeros([self.size, 1], dtype=float)
-        self.delta = np.zeros([self.size, 1], dtype=float)
+        self.bias = np.zeros([1, self.size], dtype=float)
+        self.linear_output = np.zeros(self.size, dtype=float)
+        self.activated_output = np.zeros(self.size, dtype=float)
+        self.delta = np.zeros([1, self.size], dtype=float)
 
     def set_predecessor_list(self, predecessors: [int]):
         self.predecessors = predecessors
@@ -21,15 +21,11 @@ class Layer:
     def set_successor_list(self, successors: [int]):
         self.successors = successors
 
-    def set_linear_output(self, input_vectors: [np.array], weights: [np.array]) -> np.array:
-        all_weights = np.concatenate(weights, axis=1)
-        all_inputs = np.concatenate(input_vectors, axis=0)
-        self.linear_output = np.dot(all_weights, all_inputs) + self.bias
+    def set_linear_output(self, input_vectors: np.array, weights: np.array) -> np.array:
+        self.linear_output = np.tensordot(input_vectors, weights.transpose(1, 0), axes = 1)
 
     def set_activated_output(self) -> np.array:
         self.activated_output = self.activation_function(self.linear_output)
 
     def set_delta(self, delta_vectors: [np.array], weights: [np.array]):
-        all_weights = np.concatenate(weights, axis=0)
-        all_deltas = np.concatenate(delta_vectors, axis=0)
-        self.delta = np.dot(all_weights.transpose(), all_deltas) * self.activation_derivative(self.linear_output)
+        self.delta = np.tensordot(delta_vectors, weights, axes = 1) * self.activation_derivative(self.linear_output)
