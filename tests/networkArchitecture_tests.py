@@ -1,20 +1,18 @@
-from codeBase.networkArchitecture import NetworkArchitecture
-from codeBase.layer import Layer
+# from sklearn.datasets import fetch_mldata
+
+from source.networkArchitecture import NetworkArchitecture
+from source.layer import Layer
+from source.activation import Sigmoid
+from source.transformation import Linear
 import numpy as np
 import unittest
 
 
 class NetworkClassTests(unittest.TestCase):
-    def sigmoid_activation(self, input: np.array) -> np.array:
-        return 1.0/(1.0 + np.exp(-input))
-
-    def sigmoid_derivative(self, input: np.array) -> np.array:
-        return self.sigmoid_activation(input)*(1-self.sigmoid_activation(input))
-
     def create_list_of_layers_with_sigmoid_activations(self, layer_sizes: [int]) -> [Layer]:
         layers_list = list()
         for size in layer_sizes:
-            new_layer = Layer(size, self.sigmoid_activation, self.sigmoid_derivative)
+            new_layer = Layer(size, input_transformation=Linear(), activation=Sigmoid())
             layers_list.append(new_layer)
         return layers_list
 
@@ -145,3 +143,37 @@ class NetworkClassTests(unittest.TestCase):
         gradient_for_biases, gradient_for_weights = network1.back_propagate_all_layers(training_data)
         self.assertTrue((np.zeros([3,1]) == gradient_for_biases[0]).all())
         self.assertTrue((np.zeros([2,3]) == gradient_for_weights[1]).all())
+
+    # def test_mnist_test(self):
+    #     all_data = fetch_mldata(data_home="/Users/Swapnil/Analytics/", dataname="mnist-original")
+    #     random_index = np.random.choice(len(all_data.data), 50000, replace=False)
+    #     random_index1 = random_index[:40000]
+    #     random_index2 = random_index[40000:]
+    #     training_data_x = all_data.data[random_index1]/25500
+    #     training_data_x = training_data_x.reshape(len(training_data_x), 1, 784)
+    #
+    #     training_data_target = all_data.target[random_index1].astype(int)
+    #     training_data_y = np.zeros([len(training_data_target), 1, 10], dtype = int)
+    #     for i in range(len(training_data_target)):
+    #         training_data_y[i, 0, training_data_target[i]] = 1
+    #
+    #     training_data = tuple(zip(training_data_x, training_data_y))
+    #     learning_rate = 0.5
+    #     epochs = 30
+    #     batch_size = 25
+    #     layers_list = self.create_list_of_layers_with_sigmoid_activations([784, 100, 10])
+    #     mnistNw = NetworkArchitecture(layers_list, [(0,1), (1,2)])
+    #     mnistNw.train_netwrok(training_data, epochs, batch_size, learning_rate)
+    #
+    #     ## Prediction on test data
+    #     test_data_x = all_data.data[random_index2]/25500
+    #     test_data_x = test_data_x.reshape(len(test_data_x), 1, 784)
+    #     test_data_target = all_data.target[random_index2].astype(int)
+    #     output_digit = []
+    #     for i in range(10000):
+    #         mnistNw.feed_forward_all_layers(test_data_x[i])
+    #         output = mnistNw.all_layers[2].activated_output
+    #         output_digit.append(np.argmax(output))
+    #     accuracy = sum(int(x == y) for (x, y) in tuple(zip(output_digit, test_data_target)))
+    #     accuracy = accuracy/10000
+    #     print(accuracy)
