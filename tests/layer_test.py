@@ -1,46 +1,32 @@
 from source.layer import Layer
 from source.activation import LinearDouble
-from source.transformation import Linear, Quadratic
 import numpy as np
 import unittest
 
 
 class LayerClassTests(unittest.TestCase):
-    def testThat_setTransformedInput_and_setActivatedOutput_givesCorrectOutputs_WithLinearTransformation(self):
-        layer_one = Layer([3], input_transformation=Linear(), activation=LinearDouble())
-        input_vectors = np.array([[1, 2, 3, 4], [0, 1, 2, 3]])
-        input_weights = np.array([[0, 0, 0, 0], [1, 1, 1, 1], [2, 2, 2, 2]])
+    def testThat_setInputArray_and_setOutputArray_givesCorrectOutputs_for1DLayerShape(self):
+        layer_one = Layer(0, [2], activation=LinearDouble())
+        input_arrays = [np.array([1, 2]), np.array([3, 4]), np.array([0, 1]), np.array([2, 3])]
 
-        layer_one.set_transformed_input(input_vectors, input_weights)
-        layer_one.set_activated_output()
+        expected_input_array = np.array([6, 10], dtype=float)
+        expected_output_array = np.array([12, 20], dtype=float)
 
-        expected_transformed_input = np.array([[0, 10, 20], [0, 6, 12]], dtype=float)
-        expected_activated_output = np.array([[0, 20, 40], [0, 12, 24]], dtype=float)
-        self.assertTrue((expected_transformed_input == layer_one.transformed_input).all())
-        self.assertTrue((expected_activated_output == layer_one.activated_output).all())
+        layer_one.set_input_array(input_arrays)
+        layer_one.set_output_array()
 
-    def testThat_setTransformedInput_and_setActivatedOutput_givesCorrectOutputs_WithQuadraticTransformation(self):
-        layer_one = Layer([3], input_transformation=Quadratic(), activation=LinearDouble())
-        input_vectors = np.array([[1, 2, 3, 4], [0, 1, 2, 3]])
-        input_weights = np.array([[0, 0, 0, 0], [1, 1, 1, 1], [2, 2, 2, 2]])
+        self.assertTrue((expected_input_array == layer_one.input_array).all())
+        self.assertTrue((expected_output_array == layer_one.output_array).all())
 
-        layer_one.set_transformed_input(input_vectors, input_weights)
-        layer_one.set_activated_output()
+    def testThat_setInputArray_and_setOutputArray_givesCorrectOutputs_for2DLayerShape(self):
+        layer_one = Layer(0, [2, 3], activation=LinearDouble())
+        input_arrays = [np.array([[1, 2, 3], [4, 0, 1]])]
 
-        expected_transformed_input = np.array([[0, 30, 60], [0, 14, 28]], dtype=float)
-        expected_activated_output = np.array([[0, 60, 120], [0, 28, 56]], dtype=float)
-        self.assertTrue((expected_transformed_input == layer_one.transformed_input).all())
-        self.assertTrue((expected_activated_output == layer_one.activated_output).all())
+        expected_input_array = np.array([[1, 2, 3], [4, 0, 1]], dtype=float)
+        expected_output_array = np.array([[2, 4, 6], [8, 0, 2]], dtype=float)
 
-    # def testThat_setTransformedInput_and_setActivatedOutput_givesCorrectOutputs_With2DShape(self):
-    #     layer_one = Layer([3, 2], input_transformation=Linear(), activation=LinearDouble())
-    #     input_vectors = np.array([[1, 2, 3, 4], [0, 1, 2, 3]])
-    #     input_weights = np.array([[0, 0, 0, 0], [1, 1, 1, 1], [2, 2, 2, 2]])
-    #
-    #     layer_one.set_transformed_input(input_vectors, input_weights)
-    #     layer_one.set_activated_output()
-    #
-    #     expected_transformed_input = np.array([[0, 10, 20], [0, 6, 12]], dtype=float)
-    #     expected_activated_output = np.array([[0, 20, 40], [0, 12, 24]], dtype=float)
-    #     self.assertTrue((expected_transformed_input == layer_one.transformed_input).all())
-    #     self.assertTrue((expected_activated_output == layer_one.activated_output).all())
+        layer_one.set_input_array(input_arrays)
+        layer_one.set_output_array()
+
+        self.assertTrue((expected_input_array == layer_one.input_array).all())
+        self.assertTrue((expected_output_array == layer_one.output_array).all())

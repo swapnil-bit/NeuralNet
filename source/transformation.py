@@ -17,18 +17,8 @@ class Transformation:
 
 class Linear(Transformation):
     def transform(self, input_array: np.array, weights_array: np.array) -> np.array:
-        # TODO: Multiple layer connections needs to be handled elsewhere (as part of layer or network architecture)
-        # TODO: Weight dimension is to be derived from to_layer_shape and from_layer_shape
-        # TODO: Need to convert 1d input array to 2d globally so following lines need to be moved elsewhere:
-        # if len(input_array.shape) == 1:
-        #     input_array = input_array.reshape(input_array.shape[0], 1)
-
         transformation_axes = self.get_tensordot_axis_length(input_array.shape, weights_array.shape)
-        # return np.tensordot(input, weights.transpose(1, 0), axes=1)
         tensor_dot_product = np.tensordot(weights_array, input_array, axes=transformation_axes)
-        # dot_product_shape = list(tensor_dot_product.shape)
-        # if dot_product_shape[-1] == 1:
-        #     tensor_dot_product = tensor_dot_product.reshape(dot_product_shape[:-1])
         return tensor_dot_product
 
     def backpropagate_delta(self, delta_to_layer: np.array, weights_array: np.array, activation: Activation,

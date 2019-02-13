@@ -1,13 +1,8 @@
 import numpy as np
+
+from source.connection import Connection
 from source.layer import Layer
 from source.loss import CrossEntropy
-
-
-class Connection:
-    def __init__(self, starting_layer: Layer, ending_layer: Layer):
-        self.starting_layer = starting_layer
-        self.ending_layer = ending_layer
-        self.weights = np.zeros([starting_layer.shape, ending_layer.shape])
 
 
 class NetworkArchitecture:
@@ -54,8 +49,8 @@ class NetworkArchitecture:
         for current_layer_index in self.feed_forward_sequence[1:]:
             current_input_vector = self.get_input_vectors_of_a_layer(current_layer_index)
             input_weights = self.get_input_weights_of_a_layer(current_layer_index)
-            self.all_layers[current_layer_index].set_transformed_input(current_input_vector, input_weights)
-            self.all_layers[current_layer_index].set_activated_output()
+            self.all_layers[current_layer_index].set_input_array(current_input_vector, input_weights)
+            self.all_layers[current_layer_index].set_output_array()
 
     def get_input_weights_of_a_layer(self, current_layer_index: int):
         required_weight_indices = [self.connection_indices.index((predecessor, current_layer_index))
@@ -115,7 +110,7 @@ class NetworkArchitecture:
         output_layer_index = self.back_propagation_sequence[0]
         predicted_y_vectors = self.all_layers[output_layer_index].activated_output
         self.all_layers[output_layer_index].delta = self.loss.get_delta_last_layer(predicted_y_vectors,
-                                                                                     actual_y_vectors)
+                                                                                   actual_y_vectors)
         for layer_index in self.back_propagation_sequence[1:]:
             successors_deltas = self.get_successor_deltas_of_a_layer(layer_index)
             output_weights = self.get_output_weights_of_a_layer(layer_index)

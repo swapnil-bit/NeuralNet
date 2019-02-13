@@ -88,6 +88,17 @@ class TransformationClassTests(unittest.TestCase):
         expected_output = np.array([15, 11, 14, 14])
         self.assertTrue((actual_output == expected_output).all())
 
+    def testThat_LinearTransformation_givesCorrectTransformation_with2DFullyConnectedLayers(self):
+        # Example: from_layer.shape = [2,2], to_layer.shape = [3,2] => weights.shape = [3,2,2,2]; axis_length = 2
+        input_array = np.array([[1, 0], [1, 1]])
+        weight_array = np.array([[[[2, 1], [2, 2]], [[1, 1], [1, 2]]],
+                                 [[[2, 0], [2, 3]], [[1, 0], [1, 0]]],
+                                 [[[2, 0], [2, 3]], [[1, 1], [2, 0]]]])
+        transformation2 = Linear()
+        actual_output = transformation2.transform(input_array, weight_array)
+        expected_output = np.array([[6, 4], [7, 2], [7, 3]])
+        self.assertTrue((np.around(actual_output, 3) == expected_output).all())
+
     def testThat_LinearTransformation_givesCorrectBackPropagationDelta_with1DLayers(self):
         # Example: from_layer.shape = [3,], to_layer.shape = [2,] => weights.shape = [2,3]; axis_length = 1
         transformed_input_array = np.array([1, 0, 1])
@@ -153,3 +164,19 @@ class TransformationClassTests(unittest.TestCase):
                                                              transformed_input_array2)
         self.assertTrue(actual_output1.shape == (3, 2, 2))
         self.assertTrue(actual_output2.shape == (3, 2, 3, 2, 2))
+
+    def testThat_LinearTransformation_givesCorrectBackPropagationDelta_with2DFullyConnectedLayers(self):
+        # Example: from_layer.shape = [2,2], to_layer.shape = [3,2] => weights.shape = [3,2,2,2]; axis_length = 2
+        transformed_input_array = np.array([[1, 0], [1, 1]])
+        weight_array = np.array([[[[2, 1], [2, 2]], [[1, 1], [1, 2]]],
+                                 [[[2, 0], [2, 3]], [[1, 0], [1, 0]]],
+                                 [[[2, 0], [2, 3]], [[1, 1], [2, 0]]]])
+        activation = Sigmoid()
+        delta_vectors = np.array([[0.1, 0.2], [0.3, 0.1], [0.2, 0.3]])
+        transformation3 = Linear()
+        actual_output = transformation3.backpropagate_delta(delta_vectors, weight_array, activation,
+                                                            transformed_input_array)
+        # tensordot = [[1.8, 0.6], [2.1, 2.1]]
+        # activation_derivative = [[0.197, 0.25], [0.197, 0.197]]
+        expected_output = np.array([[0.354, 0.150], [0.413, 0.413]])
+        self.assertTrue((np.around(actual_output, 3) == expected_output).all())
