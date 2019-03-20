@@ -4,6 +4,7 @@ from source.transformation import Transformation, Linear
 
 
 class Layer:
+    # TODO: need to investigate for 1D layers, is [n] correct dimension or [1, n]? Currently, it works with [n]
     def __init__(self, id: int, shape: [int], name: str = None, initial_bias: np.array = None,
                  input_transformation: Transformation = Linear(), activation: Activation = Sigmoid()):
         self.id = id

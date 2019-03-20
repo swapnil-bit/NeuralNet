@@ -7,6 +7,7 @@ from source.transformation import Transformation, Linear
 class Connection:
     def __init__(self, from_layer: Layer, to_layer: Layer, connection_type: str = "Fully",
                  transformation: Transformation = Linear(), initial_weights: np.array = np.array([])):
+        self.id = (from_layer.id, to_layer.id)
         self.from_layer = from_layer
         self.to_layer = to_layer
         self.input_shape = self.from_layer.shape
