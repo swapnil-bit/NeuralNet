@@ -25,12 +25,13 @@ class NetworkClassTests(unittest.TestCase):
         return None
 
     def create_list_of_connections_having_fully_connection_type(self, layers_list: [Layer],
-                                                                layer_connections: [tuple]) -> [Connection]:
+                                                                layer_connections: [tuple],
+                                                                weight_distribution: str = "zeros") -> [Connection]:
         connections_list = list()
         for connection in layer_connections:
             from_layer = self.get_layer_from_layer_id(connection[0], layers_list)
             to_layer = self.get_layer_from_layer_id(connection[1], layers_list)
-            new_connection = Connection(from_layer, to_layer, "Fully", Linear(), np.array([]))
+            new_connection = Connection(from_layer, to_layer, "fully", Linear(), np.array([]), weight_distribution)
             connections_list.append(new_connection)
         return connections_list
 
@@ -64,15 +65,6 @@ class NetworkClassTests(unittest.TestCase):
         expected_sequence = [4, 3, 2, 1, 0]
         actual_sequence = network1.back_propagation_sequence
         self.assertEqual(expected_sequence, actual_sequence)
-
-    # def testThat_getInputWeights_givesWeightsInCorrectDimensions(self):
-    #     layers = self.create_list_of_1D_layers_with_sigmoid_activations([3, 3, 2, 3, 3])
-    #     connection_indices = [(0, 1), (0, 2), (1, 3), (2, 4), (3, 4)]
-    #     connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
-    #     network1 = NetworkArchitecture(layers, connections)
-    #     expected_weights = np.zeros([3, 5])
-    #     actual_weights = network1.get_input_weights_of_a_layer(4)
-    #     self.assertTrue((expected_weights == actual_weights).all())
 
     def testThat_getInputArrays_givesArraysInCorrectDimensions_ForSingleInput(self):
         layers = self.create_list_of_1D_layers_with_sigmoid_activations([3, 3, 2, 3, 3])
@@ -192,7 +184,7 @@ class NetworkClassTests(unittest.TestCase):
     #     batch_size = 1
     #     layers = self.create_list_of_1D_layers_with_sigmoid_activations([784, 100, 10])
     #     connection_indices = [(0, 1), (1, 2)]
-    #     connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
+    #     connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices, "normal")
     #     mnistNw = NetworkArchitecture(layers, connections)
     #     mnistNw.train_netwrok(training_data, epochs, batch_size, learning_rate)
     #

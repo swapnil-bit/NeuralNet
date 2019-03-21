@@ -14,6 +14,11 @@ class Transformation:
                             transformed_input: np.array) -> np.array:
         pass
 
+    @abstractmethod
+    def get_gradient_for_weights(self, successor_delta: np.array, predecessor_output: np.array,
+                                 weights_shape: [int]) -> np.array:
+        pass
+
 
 class Linear(Transformation):
     def transform(self, input_array: np.array, weights_array: np.array) -> np.array:
@@ -32,6 +37,16 @@ class Linear(Transformation):
         # Below is Hadamard product with respect to activation_derivative
         delta_from_layer = backpropagation_delta * activation.derivative(transformed_input_from_layer)
         return delta_from_layer
+
+    def get_gradient_for_weights(self, successor_delta: np.array, predecessor_output: np.array,
+                                 weights_shape: [int]) -> np.array:
+        transformation_axes = self.get_tensordot_axis_length(predecessor_output.shape, weights_shape)
+        initial_axis = list(np.arange(len(predecessor_output.shape)))
+        transposed_axis = initial_axis[-transformation_axes:] + initial_axis[:-transformation_axes]
+        transposed_predecessor_output = np.transpose(predecessor_output, transposed_axis)
+        tensordot_axes = len(predecessor_output.shape) - transformation_axes
+        gradient_for_weights = np.tensordot(successor_delta, transposed_predecessor_output, axes=tensordot_axes)
+        return gradient_for_weights
 
     def get_tensordot_axis_length(self, input_shape: [], weights_shape: []) -> int:
         loop_length = min(len(input_shape), len(weights_shape))
@@ -52,3 +67,7 @@ class Quadratic(Transformation):
                             transformed_input: np.array) -> np.array:
         return 2 * np.tensordot(delta_vectors, weights, axes=1) * activation.function(
             transformed_input) * activation.derivative(transformed_input)
+
+    def get_gradient_for_weights(self, successor_delta: np.array, predecessor_output: np.array,
+                                 weights_shape: [int]) -> np.array:
+        pass

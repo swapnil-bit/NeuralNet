@@ -72,9 +72,9 @@ class NetworkArchitecture:
             connection.weights -= (eta / len(training_subset)) * gradient_for_weights[connection.id]
 
     def back_propagate_all_layers(self, training_data):
-        # TODO: shapes of biases should be more dynamic to accomodate multi dimensional array
         gradient_for_biases = dict((layer.id, np.zeros(layer.shape)) for layer in self.all_layers.values())
-        gradient_for_weights = dict((connection.id, np.zeros(connection.weights.shape)) for connection in self.connections.values())
+        gradient_for_weights = dict(
+            (connection.id, np.zeros(connection.weights.shape)) for connection in self.connections.values())
 
         input_arrays = [x[0] for x in training_data]
         input_arrays = np.concatenate(input_arrays, axis=0)  # TODO: This works only with batch size 1
@@ -88,12 +88,9 @@ class NetworkArchitecture:
             gradient_for_biases[layer.id] += delta_sum
         for connection in self.connections.values():
             predecessor, successor = connection.id
-            # TODO: Below lines are gross deviation from actual code. It will work for only 1D arrays.
-            # TODO: Actually it should be tensordot product with right axis length without any reshape.
-            # TODO: Shape of tensordot should match weights shape.
-            required_shape = connection.weights.shape
-            gradient_for_weights[connection.id] += (np.kron(self.all_layers[successor].delta,
-                                                           self.all_layers[predecessor].output_array)).reshape(required_shape)
+            # TODO: Need to write tests for below code to check compatibility with multiple tensor shapes
+            gradient_for_weights[connection.id] += connection.transformation.get_gradient_for_weights(
+                self.all_layers[successor].delta, self.all_layers[predecessor].output_array, connection.weights.shape)
         return gradient_for_biases, gradient_for_weights
 
     def update_deltas_of_all_layers(self, input_arrays, actual_y_arrays):
