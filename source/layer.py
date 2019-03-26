@@ -1,17 +1,18 @@
 import numpy as np
 from source.activation import Activation, Sigmoid
-from source.transformation import Transformation, Linear
+from source.transformation import Transformation
+from source.linear import Linear
 
 
 class Layer:
     # TODO: need to investigate for 1D layers, is [n] correct dimension or [1, n]? Currently, it works with [n]
     def __init__(self, id: int, shape: [int], name: str = None, initial_bias: np.array = None,
-                 input_transformation: Transformation = Linear(), activation: Activation = Sigmoid()):
+                 activation: Activation = Sigmoid()):
         self.id = id
         self.name = name
         self.shape = shape
         self.bias = np.zeros(shape) if initial_bias is None else initial_bias
-        self.input_transformation = input_transformation
+        # self.input_transformation = input_transformation
         self.activation = activation
         self.predecessors = []
         self.successors = []
@@ -31,8 +32,3 @@ class Layer:
 
     def set_output_array(self) -> np.array:
         self.output_array = self.activation.function(self.input_array)
-
-    def set_delta(self, delta_vectors: [np.array], weights: [np.array]):
-        self.delta = self.input_transformation.backpropagate_delta(delta_vectors, weights, self.activation, self.input_array)
-        # self.delta = np.tensordot(delta_vectors, weights, axes=1) * self.activation.derivative(self.transformed_input)
-        # TODO: First part above will change as per input_transformation -> needs to be moved elsewhere as transformation is not part of layer

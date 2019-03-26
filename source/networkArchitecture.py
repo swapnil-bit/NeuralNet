@@ -87,31 +87,25 @@ class NetworkArchitecture:
             # delta_sum = delta_sum.reshape(np.append(1, delta_sum.shape))  # TODO: is this shape dynamic?
             gradient_for_biases[layer.id] += delta_sum
         for connection in self.connections.values():
-            predecessor, successor = connection.id
             # TODO: Need to write tests for below code to check compatibility with multiple tensor shapes
-            gradient_for_weights[connection.id] += connection.transformation.get_gradient_for_weights(
-                self.all_layers[successor].delta, self.all_layers[predecessor].output_array, connection.weights.shape)
+            gradient_for_weights[connection.id] += connection.get_gradient_for_weights()
         return gradient_for_biases, gradient_for_weights
 
     def update_deltas_of_all_layers(self, input_arrays, actual_y_arrays):
+        self.update_delta_of_last_layer(actual_y_arrays, input_arrays)
+        for layer_id in self.back_propagation_sequence[1:]:
+            self.update_delta_of_single_layer(layer_id)
+
+    def update_delta_of_last_layer(self, actual_y_arrays, input_arrays):
         self.feed_forward_all_layers(input_arrays)
         output_layer_id = self.back_propagation_sequence[0]
         predicted_y_arrays = self.all_layers[output_layer_id].output_array
         self.all_layers[output_layer_id].delta = self.loss.get_delta_last_layer(predicted_y_arrays, actual_y_arrays)
-        for layer_id in self.back_propagation_sequence[1:]:
-            successors_deltas = self.get_successor_deltas_of_a_layer(layer_id)
-            output_weights = self.get_output_weights_of_a_layer(layer_id)
-            self.all_layers[layer_id].set_delta(successors_deltas, output_weights)
 
-    def get_output_weights_of_a_layer(self, current_layer_id: int):
-        all_weights = [self.connections[(current_layer_id, successor)].weights for successor
-                       in self.all_layers[current_layer_id].successors]
-        all_weights = np.concatenate(all_weights, axis=0)
-        return all_weights
+    def update_delta_of_single_layer(self, layer_id):
+        current_layer_delta = np.zeros(self.all_layers[layer_id].shape)
+        for successor in self.all_layers[layer_id].successors:
+            back_propagated_delta = self.connections[(layer_id, successor)].get_input_layer_delta()
+            current_layer_delta = current_layer_delta + back_propagated_delta
+        self.all_layers[layer_id].delta = current_layer_delta
 
-    def get_successor_deltas_of_a_layer(self, current_layer_id: int):
-        delta_inputs = [self.all_layers[successor].delta
-                        for successor in self.all_layers[current_layer_id].successors]
-        highest_axis = delta_inputs[0].ndim - 1
-        delta_inputs = np.concatenate(delta_inputs, axis=highest_axis)
-        return delta_inputs
