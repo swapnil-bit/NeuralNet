@@ -38,7 +38,7 @@ class NetworkArchitecture:
         return processed_layers
 
     def feed_forward_all_layers(self, input_arrays):
-        self.all_layers[0].output_array = input_arrays
+        self.all_layers[0].output_array = input_arrays.reshape(self.all_layers[0].shape)
         for layer_id in self.feed_forward_sequence[1:]:
             current_input_arrays = self.get_input_arrays_of_a_layer(layer_id)
             self.all_layers[layer_id].set_input_array(current_input_arrays)
@@ -83,7 +83,7 @@ class NetworkArchitecture:
         self.update_deltas_of_all_layers(input_arrays, actual_y_arrays)
 
         for layer in self.all_layers.values():
-            delta_sum = layer.delta.sum(axis=0)
+            delta_sum = layer.delta.sum(axis=0)  # TODO: Needs investigation: Should not sum if batch size is 1
             # delta_sum = delta_sum.reshape(np.append(1, delta_sum.shape))  # TODO: is this shape dynamic?
             gradient_for_biases[layer.id] += delta_sum
         for connection in self.connections.values():

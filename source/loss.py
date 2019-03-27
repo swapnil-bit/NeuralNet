@@ -18,6 +18,7 @@ class CrossEntropy(Loss):
 
     def get_delta_last_layer(self, predicted_y: np.array, actual_y: np.array):
         # value is same as cost_derivative * sigmoid_derivative for cross_entropy cost function
+        actual_y = actual_y.reshape(predicted_y.shape)
         return predicted_y - actual_y
 
 

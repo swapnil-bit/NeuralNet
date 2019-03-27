@@ -5,14 +5,13 @@ from source.linear import Linear
 
 
 class Layer:
-    # TODO: need to investigate for 1D layers, is [n] correct dimension or [1, n]? Currently, it works with [n]
     def __init__(self, id: int, shape: [int], name: str = None, initial_bias: np.array = None,
                  activation: Activation = Sigmoid()):
         self.id = id
         self.name = name
-        self.shape = shape
-        self.bias = np.zeros(shape) if initial_bias is None else initial_bias
-        # self.input_transformation = input_transformation
+        shape = [i for i in shape if i > 1]
+        self.shape = [1] if shape == [] else shape
+        self.bias = np.zeros(self.shape) if initial_bias is None else initial_bias.reshape(self.shape)
         self.activation = activation
         self.predecessors = []
         self.successors = []
@@ -28,7 +27,7 @@ class Layer:
 
     def set_input_array(self, input_arrays: [np.array]) -> np.array:
         # TODO: How to combine inputs from multiple predecessors? As first step, it will add only.
-        self.input_array = sum(input_arrays) + self.bias
+        self.input_array = sum(input_arrays).reshape(self.shape) + self.bias
 
     def set_output_array(self) -> np.array:
         self.output_array = self.activation.function(self.input_array)

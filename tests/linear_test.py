@@ -6,7 +6,7 @@ import unittest
 
 class LinearTransformationClassTests(unittest.TestCase):
     @staticmethod
-    def get_test_sample_data():
+    def get_test_data_for_various_input_and_output_shapes():
         input_shapes = [[10], [2], [2], [2], [2], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3],
                         [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4],
                         [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [3, 2, 3, 2, 2]]
@@ -29,10 +29,33 @@ class LinearTransformationClassTests(unittest.TestCase):
         gradient_axes = [1, 0, 1, 1, 0, 0, 1, 1, 0, 2, 2, 1, 0, 1, 0, 2, 1, 0, 3, 2, 1, 0, 3, 2, 1, 0, 2]
         return input_shapes, output_shapes, weights_shapes, forward_propagation_axes, transposed_weights_axes, back_propagation_axes, transposed_input_axes, gradient_axes
 
+    @staticmethod
+    def get_test_data_for_collapsible_input_and_output_shapes():
+        input_shapes = [[10, 1], [5, 1], [5, 1], [2, 3], [2, 3]]
+        output_shapes = [[5, 1], [5, 1], [4, 2], [5, 1], [3, 1]]
+        weights_shapes = [[5, 10], [1], [4, 2, 5], [5, 2, 3], [2]]
+        forward_propagation_axes = [1, 0, 1, 2, 1]
+        transposed_weights_axes = [[1, 0], [0], [2, 0, 1], [1, 2, 0], [0]]
+        back_propagation_axes = [1, 0, 2, 1, 0]
+        transposed_input_axes = [[0], [0], [0], [0, 1], [1, 0]]
+        gradient_axes = [0, 1, 0, 0, 1]
+        return input_shapes, output_shapes, weights_shapes, forward_propagation_axes, transposed_weights_axes, back_propagation_axes, transposed_input_axes, gradient_axes
+
     # ========== FORWARD PROPAGATION PARAMETERS TESTS ========== #
 
     def testThat_getForwardPropagationParameters_givesCorrectDetails_forVariousInputAndOutputShapes(self):
-        input_shapes, output_shapes, weights_shapes, forward_propagation_axes, _, _, _, _ = self.get_test_sample_data()
+        input_shapes, output_shapes, weights_shapes, forward_propagation_axes, _, _, _, _ = self.get_test_data_for_various_input_and_output_shapes()
+        actual_weight_shapes = list()
+        actual_forward_propagation_axes = list()
+        for i in range(len(input_shapes)):
+            transformation1 = Linear("optimal", input_shapes[i], output_shapes[i])
+            actual_weight_shapes.append(transformation1.weights_shape)
+            actual_forward_propagation_axes.append(transformation1.forward_propagation_axes)
+        self.assertEqual(forward_propagation_axes, actual_forward_propagation_axes)
+        self.assertEqual(weights_shapes, actual_weight_shapes)
+
+    def testThat_getForwardPropagationParameters_givesCorrectDetails_forCollapsibleInputAndOutputShapes(self):
+        input_shapes, output_shapes, weights_shapes, forward_propagation_axes, _, _, _, _ = self.get_test_data_for_collapsible_input_and_output_shapes()
         actual_weight_shapes = list()
         actual_forward_propagation_axes = list()
         for i in range(len(input_shapes)):
@@ -155,7 +178,18 @@ class LinearTransformationClassTests(unittest.TestCase):
     # ========== BACK PROPAGATION PARAMETERS TESTS ========== #
 
     def testThat_getBackPropagationParameters_givesCorrectDetails_forVariousInputAndOutputShapes(self):
-        input_shapes, output_shapes, _, _, transposed_weights_axes, back_propagation_axes, _, _ = self.get_test_sample_data()
+        input_shapes, output_shapes, _, _, transposed_weights_axes, back_propagation_axes, _, _ = self.get_test_data_for_various_input_and_output_shapes()
+        actual_weight_transposition_axes = list()
+        actual_back_propagation_axes = list()
+        for i in range(len(input_shapes)):
+            transformation3 = Linear("optimal", input_shapes[i], output_shapes[i])
+            actual_weight_transposition_axes.append(transformation3.transposed_weights_axes)
+            actual_back_propagation_axes.append(transformation3.back_propagation_axes)
+        self.assertEqual(transposed_weights_axes, actual_weight_transposition_axes)
+        self.assertEqual(back_propagation_axes, actual_back_propagation_axes)
+
+    def testThat_getBackPropagationParameters_givesCorrectDetails_forCollapsibleInputAndOutputShapes(self):
+        input_shapes, output_shapes, _, _, transposed_weights_axes, back_propagation_axes, _, _ = self.get_test_data_for_collapsible_input_and_output_shapes()
         actual_weight_transposition_axes = list()
         actual_back_propagation_axes = list()
         for i in range(len(input_shapes)):
@@ -168,7 +202,7 @@ class LinearTransformationClassTests(unittest.TestCase):
     # ========== BACK PROPAGATION VALUES TESTS ========== #
 
     def testThat_backPropagateDelta_givesCorrectDeltaDimensions_forVariousInputAndOutputShapes(self):
-        input_shapes, output_shapes, weights_shapes, _, _, _, _, _ = self.get_test_sample_data()
+        input_shapes, output_shapes, weights_shapes, _, _, _, _, _ = self.get_test_data_for_various_input_and_output_shapes()
         actual_delta_shapes = list()
         for i in range(len(input_shapes)):
             transformation4 = Linear("optimal", input_shapes[i], output_shapes[i])
@@ -181,6 +215,22 @@ class LinearTransformationClassTests(unittest.TestCase):
             actual_delta_shapes.append(list(input_layer_delta.shape))
 
         self.assertEqual(input_shapes, actual_delta_shapes)
+
+    def testThat_backPropagateDelta_givesCorrectDeltaDimensions_forCollapsibleInputAndOutputShapes(self):
+        input_shapes, output_shapes, weights_shapes, _, _, _, _, _ = self.get_test_data_for_collapsible_input_and_output_shapes()
+        expected_input_shapes = [[10], [5], [5], [2, 3], [2, 3]]
+        actual_delta_shapes = list()
+        for i in range(len(input_shapes)):
+            transformation4 = Linear("optimal", input_shapes[i], output_shapes[i])
+            output_layer_delta = np.zeros(output_shapes[i])
+            weights = np.zeros(weights_shapes[i])
+            activation = Sigmoid()
+            transformed_input = np.zeros(input_shapes[i])
+            input_layer_delta = transformation4.back_propagate_delta(output_layer_delta, weights, activation,
+                                                                     transformed_input)
+            actual_delta_shapes.append(list(input_layer_delta.shape))
+
+        self.assertEqual(expected_input_shapes, actual_delta_shapes)
 
     def testThat_backPropagateDelta_givesCorrectDelta_withOptimallyConnected1DLayers(self):
         # Example: from_layer.shape = [3,], to_layer.shape = [2,] => weights.shape = [2,3]; axis_length = 1
@@ -251,7 +301,19 @@ class LinearTransformationClassTests(unittest.TestCase):
     # ========== GRADIENT PARAMETERS TESTS ========== #
 
     def testThat_getGradientParameters_givesDetails_forVariousInputAndOutputShapes(self):
-        input_shapes, output_shapes, _, _, _, _, transposed_input_axes, gradient_axes = self.get_test_sample_data()
+        input_shapes, output_shapes, _, _, _, _, transposed_input_axes, gradient_axes = self.get_test_data_for_various_input_and_output_shapes()
+        actual_transposed_input_axes = list()
+        actual_gradient_axes = list()
+        for i in range(len(input_shapes)):
+            transformation5 = Linear("optimal", input_shapes[i], output_shapes[i])
+            actual_transposed_input_axes.append(transformation5.transposed_input_axes)
+            actual_gradient_axes.append(transformation5.weight_gradient_axes)
+
+        self.assertEqual(transposed_input_axes, actual_transposed_input_axes)
+        self.assertEqual(gradient_axes, actual_gradient_axes)
+
+    def testThat_getGradientParameters_givesDetails_forCollapsibleInputAndOutputShapes(self):
+        input_shapes, output_shapes, _, _, _, _, transposed_input_axes, gradient_axes = self.get_test_data_for_collapsible_input_and_output_shapes()
         actual_transposed_input_axes = list()
         actual_gradient_axes = list()
         for i in range(len(input_shapes)):

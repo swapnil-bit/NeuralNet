@@ -7,8 +7,10 @@ from source.transformation import Transformation
 class Linear(Transformation):
     def __init__(self, connection_type: str, input_shape: [int], output_shape: [int]):
         self.connection_type = connection_type
-        self.input_shape = input_shape
-        self.output_shape = output_shape
+        input_shape = [i for i in input_shape if i > 1]
+        self.input_shape = [1] if input_shape == [] else input_shape
+        output_shape = [i for i in output_shape if i > 1]
+        self.output_shape = [1] if output_shape == [] else output_shape
         self.weights_shape, self.forward_propagation_axes = self.get_forward_propagation_parameters()
         self.transposed_weights_axes, self.back_propagation_axes = self.get_back_propagation_parameters()
         self.transposed_input_axes, self.weight_gradient_axes = self.get_gradient_parameters()
@@ -50,11 +52,14 @@ class Linear(Transformation):
         return transposed_input_axes, gradient_axes
 
     def transform(self, input_array: np.array, weights: np.array) -> np.array:
+        input_array = input_array.reshape(self.input_shape)
         tensor_dot_product = np.tensordot(weights, input_array, axes=self.forward_propagation_axes)
         return tensor_dot_product
 
     def back_propagate_delta(self, output_layer_delta: np.array, weights: np.array, activation: Activation,
                              transformed_input: np.array) -> np.array:
+        output_layer_delta = output_layer_delta.reshape(self.output_shape)
+        transformed_input = transformed_input.reshape(self.input_shape)
         transposed_weights = np.transpose(weights, self.transposed_weights_axes)
         back_propagation_delta = np.tensordot(transposed_weights, output_layer_delta, axes=self.back_propagation_axes)
         if list(weights.shape) == [1]:
