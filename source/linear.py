@@ -56,7 +56,7 @@ class Linear(Transformation):
         :param input_array: It is list of b elements where b is the batch size being processed together. Every element
         here in itself is the input to current layer from one of its predecessor in the form of an array. So, it is same
         as the output array of the predecessor. The shape of a single input array would be mostly same as
-        self.input_shape. If not, then it should be reshaped to make it so.
+        self.input_layer_shape. If not, then it should be reshaped to make it so.
         :param weights: Weights is a tensor defining relationship between input and output layer of this connection.
         :return: Returns a list of arrays. The length of list is same as b, the batch size being processed together.
         Every element of the list is an array having shape of the output layer.
@@ -73,6 +73,8 @@ class Linear(Transformation):
         input_array_axes = list(np.arange(len(input_array.shape)))
         transposed_input_array = np.transpose(input_array, axes=(input_array_axes[1:] + input_array_axes[:1]))
         dot_product = np.tensordot(weights, transposed_input_array, axes=self.forward_propagation_axes)
+        if list(weights.shape) == [1]:
+            dot_product = np.squeeze(dot_product, axis=0)
         dot_product_axes = list(np.arange(len(dot_product.shape)))
         transformed_input = np.transpose(dot_product, axes=(dot_product_axes[-1:] + dot_product_axes[:-1]))
         transformed_input = list(transformed_input)
@@ -80,23 +82,75 @@ class Linear(Transformation):
 
     def back_propagate_delta(self, output_layer_delta: [np.array], weights: np.array, activation: Activation,
                              transformed_input: [np.array]) -> [np.array]:
-        # TODO: Logic can be similar to transform function for parallel processing
-        output_layer_delta = [single_delta.reshape(self.output_layer_shape) for single_delta in output_layer_delta]
-        transformed_input = [single_input.reshape(self.input_layer_shape) for single_input in transformed_input]
-        transposed_weights = np.transpose(weights, self.transposed_weights_axes)
-        back_propagation_delta = [np.tensordot(transposed_weights, single_delta, axes=self.back_propagation_axes) for
-                                  single_delta in output_layer_delta]
-        if list(weights.shape) == [1]:
-            back_propagation_delta = [np.squeeze(single_delta, axis=0) for single_delta in back_propagation_delta]
+        """
+        :param output_layer_delta: It is list of b elements where b is the batch size being processed together. Every
+        element here in itself is an array representing the delta calculated for output layer. So, its shape is same as
+        the output array of the successor or self.output_layer_shape. If not, then it should be reshaped to make it so.
+        :param weights: Weights is a tensor defining relationship between input and output layer of this connection.
+        :param activation: Activation function used by the input layer for calculation of input layer's output array.
+        :param transformed_input: Input array of the input layer.
+        :return: Delta array of input layer (back propagated value of Delta from output to input layer).
 
-        input_layer_delta = [back_propagation_delta[i] * activation.derivative(transformed_input[i]) for i in
-                             range(len(transformed_input))]  # Hadamard Product
+        LOGIC: Following piece of code can be used instead of actual code, if parallel processing is implemented in some
+        other ways:
+            output_layer_delta = [single_delta.reshape(self.output_layer_shape) for single_delta in output_layer_delta]
+            transformed_input = [single_input.reshape(self.input_layer_shape) for single_input in transformed_input]
+            transposed_weights = np.transpose(weights, self.transposed_weights_axes)
+            back_propagation_delta = [np.tensordot(transposed_weights, single_delta, axes=self.back_propagation_axes) for
+                                      single_delta in output_layer_delta]
+            if list(weights.shape) == [1]:
+                back_propagation_delta = [np.squeeze(single_delta, axis=0) for single_delta in back_propagation_delta]
+
+            input_layer_delta = [back_propagation_delta[i] * activation.derivative(transformed_input[i]) for i in
+                                 range(len(transformed_input))]  # Hadamard Product
+
+        """
+        batch_size = len(output_layer_delta)
+        output_layer_delta = np.concatenate(output_layer_delta, axis=0).reshape(
+            [batch_size] + list(self.output_layer_shape))
+        output_layer_axes = list(np.arange(len(output_layer_delta.shape)))
+        output_layer_delta = np.transpose(output_layer_delta, axes=(output_layer_axes[1:] + output_layer_axes[:1]))
+
+        transposed_weights = np.transpose(weights, self.transposed_weights_axes)
+        dot_product = np.tensordot(transposed_weights, output_layer_delta, axes=self.back_propagation_axes)
+        if list(weights.shape) == [1]:
+            dot_product = np.squeeze(dot_product, axis=0)
+        dot_product_axes = list(np.arange(len(dot_product.shape)))
+        back_propagation_delta = np.transpose(dot_product, axes=(dot_product_axes[-1:] + dot_product_axes[:-1]))
+
+        transformed_input = np.concatenate(transformed_input, axis=0).reshape(
+            [batch_size] + list(self.input_layer_shape))
+        input_layer_delta = back_propagation_delta * activation.derivative(transformed_input)  # Hadamard Product
+        input_layer_delta = list(input_layer_delta)
         return input_layer_delta
 
     def get_gradient_for_weights(self, output_layer_delta: [np.array], activated_input: [np.array]) -> np.array:
-        # TODO: Logic can be similar to transform function for parallel processing
-        transposed_predecessor_output = [np.transpose(single_activated_input, self.transposed_input_axes) for
-                                         single_activated_input in activated_input]
-        gradient_for_weights = [np.tensordot(output_layer_delta[i], transposed_predecessor_output[i],
-                                             axes=self.weight_gradient_axes) for i in range(len(output_layer_delta))]
-        return sum(gradient_for_weights)
+        """
+        :param output_layer_delta: It is list of b elements where b is the batch size being processed together. Every
+        element here in itself is an array representing the delta calculated for output layer. So, its shape is same as
+        the output array of the successor or self.output_layer_shape. If not, then it should be reshaped to make it so.
+        :param activated_input: Output array of the input layer (After activation is applied on Input array)
+        :return: An array with same shape as self.weights_shape representing gradient of weights.
+
+        LOGIC: Following piece of code can be used instead of actual code, if parallel processing is implemented in some
+        other ways:
+            transposed_predecessor_output = [np.transpose(single_activated_input, self.transposed_input_axes) for
+                                             single_activated_input in activated_input]
+            gradient_for_weights = [np.tensordot(output_layer_delta[i], transposed_predecessor_output[i],
+                                                 axes=self.weight_gradient_axes) for i in range(len(output_layer_delta))]
+        """
+        batch_size = len(output_layer_delta)
+        output_layer_delta = np.concatenate(output_layer_delta, axis=0).reshape(
+            [batch_size] + list(self.output_layer_shape))
+        output_layer_axes = list(np.arange(len(output_layer_delta.shape)))
+        output_layer_delta = np.transpose(output_layer_delta, axes=(output_layer_axes[1:] + output_layer_axes[:1]))
+
+        activated_input = np.concatenate(activated_input, axis=0).reshape([batch_size] + list(self.input_layer_shape))
+        transposed_input_axes = [(axis + 1) for axis in self.transposed_input_axes]
+        transposed_input_axes = transposed_input_axes[:self.weight_gradient_axes] + [0] + transposed_input_axes[
+                                                                                          self.weight_gradient_axes:]
+        activated_input = np.transpose(activated_input, axes=transposed_input_axes)
+
+        gradient_for_weights = np.tensordot(output_layer_delta, activated_input, axes=(self.weight_gradient_axes + 1))
+
+        return gradient_for_weights

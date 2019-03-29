@@ -290,7 +290,7 @@ class NetworkClassTests(unittest.TestCase):
     #     training_data = tuple(zip(training_data_x, training_data_y))
     #     learning_rate = 0.5
     #     epochs = 30
-    #     batch_size = 1
+    #     batch_size = 25
     #     layers = self.create_list_of_1D_layers_with_sigmoid_activations([784, 100, 10])
     #     connection_indices = [(0, 1), (1, 2)]
     #     connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices, "normal")
@@ -327,7 +327,7 @@ class NetworkClassTests(unittest.TestCase):
     #     training_data = tuple(zip(training_data_x, training_data_y))
     #     learning_rate = 0.5
     #     epochs = 30
-    #     batch_size = 1
+    #     batch_size = 25
     #     layers = self.create_list_of_1D_layers_with_2D_structures_and_sigmoid_activations([784, 100, 10])
     #     connection_indices = [(0, 1), (1, 2)]
     #     connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices, "normal")
