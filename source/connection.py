@@ -25,10 +25,10 @@ class Connection:
             return np.random.normal(0, 1, self.transformation.weights_shape)
         return np.zeros(self.transformation.weights_shape)
 
-    def transform_input(self, input_array: np.array) -> np.array:
+    def transform_input(self, input_array: np.array) -> [np.array]:
         return self.transformation.transform(input_array, self.weights)
 
-    def get_input_layer_delta(self) -> np.array:
+    def get_input_layer_delta(self) -> [np.array]:
         return self.transformation.back_propagate_delta(self.output_layer.delta, self.weights,
                                                         self.input_layer.activation, self.input_layer.input_array)
 

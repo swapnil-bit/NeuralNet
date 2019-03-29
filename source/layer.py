@@ -1,7 +1,5 @@
 import numpy as np
 from source.activation import Activation, Sigmoid
-from source.transformation import Transformation
-from source.linear import Linear
 
 
 class Layer:
@@ -25,9 +23,22 @@ class Layer:
     def set_successor_list(self, successors: [int]):
         self.successors = successors
 
-    def set_input_array(self, input_arrays: [np.array]) -> np.array:
-        # TODO: How to combine inputs from multiple predecessors? As first step, it will add only.
-        self.input_array = sum(input_arrays).reshape(self.shape) + self.bias
+    def set_input_array(self, input_arrays: [[np.array]]) -> [np.array]:
+        """
+        :param  input_arrays: It is a list of lists of arrays. T
+                The outermost list takes care of multiple input connections that a layer might be having. The inner list
+                takes care of batch sizes.
+                Let's say the current layer is of shape (m, n). Let's also say that current layer is  connected to 'p'
+                predecessors and we are having inputs in the batch size of 'b'. In this case, len(input_arrays) = p;
+                len(input_arrays[0]) = b; and input_arrays[0][0].shape = (m,n)
+        :return: After combining inputs from all predecessors, it gives a list of length b (batch size) having arrays
+                of shape (m, n)
+        """
+        # TODO: There can be many ways to combine inputs from multiple predecessors. Currently, it adds only.
+        batch_size = len(input_arrays[0])
+        combined_input_list = [sum([input_array[i].reshape(self.shape) for input_array in input_arrays]) for i in
+                               range(batch_size)]
+        self.input_array = [(combined_input + self.bias) for combined_input in combined_input_list]
 
     def set_output_array(self) -> np.array:
-        self.output_array = self.activation.function(self.input_array)
+        self.output_array = [self.activation.function(input_array) for input_array in self.input_array]
