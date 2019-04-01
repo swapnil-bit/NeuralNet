@@ -91,6 +91,29 @@ class Linear(Transformation):
         :param transformed_input: Input array of the input layer.
         :return: Delta array of input layer (back propagated value of Delta from output to input layer).
 
+        Calculations: Let's say delta[i, j] represents delta calculated through back-propagation for jth neuron in ith
+        layer. Since delta[i, j] affects many neurons of next layer, the back-propagation would also happen for all
+        those connected neurons. Mathematically,
+            delta[i, j] = gradient of cost function w.r.t input of jth neuron in ith layer.
+                        = summation for all connected k[(gradient of cost function w.r.t input of kth neuron in (i+1)th
+                        layer) * (gradient of input of kth neuron in (i+1)th layer w.r.t input of jth neuron in ith layer)]
+                        = summation for all connected k[(delta[(i+1), k]) * (gradient of input of kth neuron in (i+1)th
+                        layer w.r.t input of jth neuron in ith layer)
+                        = summation for all connected k[(delta[(i+1), k]) * (gradient of input of kth neuron in (i+1)th
+                        layer w.r.t output of jth neuron in ith layer) * (gradient of output of jth neuron in ith layer
+                        w.r.t input of jth neuron in ith layer)]
+                        = summation for all connected k[(delta[(i+1), k]) * (gradient of input of kth neuron in (i+1)th
+                        layer w.r.t output of jth neuron in ith layer) * activation_derivative for jth neuron in ith layer]
+
+        Second part in above formula depends on the way network is structured. Logic given below is applicable for fully
+        connected layers having single to single layer connections only. If two layers are connected to a subsequent
+        layer, second part needs to be calculated as per the logic being used for combining the inputs in this
+        subsequent layer. If they are getting combined by adding them together, below logic will still work. However,
+        for other kind of combinations, it needs to be modified. It also need modification if layers are optimally
+        connected with weights and are not fully connected.
+
+        TODO: Revisit the logic as per above discussion, for no-fully-connected and multiple connection layers.
+
         LOGIC: Following piece of code can be used instead of actual code, if parallel processing is implemented in some
         other ways:
             output_layer_delta = [single_delta.reshape(self.output_layer_shape) for single_delta in output_layer_delta]

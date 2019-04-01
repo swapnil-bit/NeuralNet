@@ -4,14 +4,41 @@ import unittest
 
 
 class LossClassTests(unittest.TestCase):
-    def testThat_CrossEntropy_Function_givesCorrectOutput(self):
-        actual_y_array = np.array([1, 0, 1])
-        predicted_y_array1 = np.array([0.9, 0.1, 0.9])
-        predicted_y_array2 = np.array([0.1, 0.9, 0.1])
+    def testThat_CrossEntropy_Function_givesCorrectOutput_for1DArrayAndSingleBatchSize(self):
+        actual_y_array = [np.array([1, 0, 1])]
+        predicted_y_array = [np.array([0.9, 0.1, 0.9])]
+        expected_cost = 0.1054
         loss1 = CrossEntropy()
-        cost1 = loss1.function(predicted_y_array1, actual_y_array)
-        cost2 = loss1.function(predicted_y_array2, actual_y_array)
-        self.assertTrue(cost1 < cost2)
+        actual_cost = loss1.function(predicted_y_array, actual_y_array)
+        self.assertEqual(expected_cost, np.round(actual_cost[0], 4))
+
+    def testThat_CrossEntropy_Function_givesCorrectOutput_for1DArrayAndMultipleBatchSize(self):
+        batch_size = 2
+        actual_y_array = [np.array([1, 0, 1])] * batch_size
+        predicted_y_array = [np.array([0.9, 0.1, 0.9]), np.array([0.1, 0.9, 0.1])]
+        expected_cost = [0.1054, 2.3026]
+        loss1 = CrossEntropy()
+        actual_cost = loss1.function(predicted_y_array, actual_y_array)
+        for i in range(batch_size):
+            self.assertEqual(expected_cost[i], np.round(actual_cost[i], 4))
+
+    def testThat_CrossEntropy_Function_givesCorrectOutput_for2DArrayAndSingleBatchSize(self):
+        actual_y_array = [np.array([[1, 0, 1], [1,0, 1]])]
+        predicted_y_array = [np.array([[0.9, 0.1, 0.9], [0.1, 0.9, 0.1]])]
+        expected_cost = 1.2040
+        loss1 = CrossEntropy()
+        actual_cost = loss1.function(predicted_y_array, actual_y_array)
+        self.assertEqual(expected_cost, np.round(actual_cost[0], 4))
+
+    def testThat_CrossEntropy_Function_givesCorrectOutput_for2DArrayAndMultipleBatchSize(self):
+        batch_size = 2
+        actual_y_array = [np.array([[1, 0, 1], [1,0, 1]])] * batch_size
+        predicted_y_array = [np.array([[0.9, 0.1, 0.9], [0.1, 0.9, 0.1]])] * batch_size
+        expected_cost = [1.2040, 1.2040]
+        loss1 = CrossEntropy()
+        actual_cost = loss1.function(predicted_y_array, actual_y_array)
+        for i in range(batch_size):
+            self.assertEqual(expected_cost[i], np.round(actual_cost[i], 4))
 
     def testThat_CrossEntropy_DeltaFunction_givesCorrectOutput(self):
         actual_y_array = [np.array([1, 0, 1])]
@@ -23,12 +50,12 @@ class LossClassTests(unittest.TestCase):
         self.assertTrue((actual_delta[0] == expected_delta[0]).all())
 
     def testThat_MeanSquare_Function_givesCorrectOutput(self):
-        actual_y_array = np.array([1, 0, 1])
-        predicted_y_array = np.array([0.9, 0.1, 0.9])
+        actual_y_array = [np.array([1, 0, 1])]
+        predicted_y_array = [np.array([0.9, 0.1, 0.9])]
+        expected_cost = 0.01
         loss2 = MeanSquare()
         actual_cost = loss2.function(predicted_y_array, actual_y_array)
-        expected_cost = 0.01
-        self.assertEqual(np.around(actual_cost, 2), expected_cost)  # Not rounding gives floating point errors
+        self.assertEqual(expected_cost, np.around(actual_cost[0], 2))  # Not rounding gives floating point errors
 
     def testThat_MeanSquare_DeltaFunction_givesCorrectOutput(self):
         actual_y_array = [np.array([1, 0, 1])]
