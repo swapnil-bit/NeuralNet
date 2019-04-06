@@ -11,6 +11,10 @@ import unittest
 
 class NetworkClassTests(unittest.TestCase):
     @staticmethod
+    def assertArrayEqual(expected, actual):
+        return np.testing.assert_array_equal(actual, expected)
+
+    @staticmethod
     def create_list_of_1D_layers_with_sigmoid_activations(layers_shapes: [int]) -> [Layer]:
         layers_list = list()
         for index in range(len(layers_shapes)):
@@ -82,12 +86,14 @@ class NetworkClassTests(unittest.TestCase):
         connection_indices = [(0, 1), (0, 2), (1, 3), (2, 4), (3, 4)]
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         network1 = NetworkArchitecture(layers, connections)
+
         network1.all_layers[2].output_array = [np.zeros([2])]
         network1.all_layers[3].output_array = [np.zeros([3])]
         expected_arrays = [[np.zeros([3])], [np.zeros([3])]]
         actual_arrays = network1.get_input_arrays_of_a_layer(4)
-        self.assertTrue((expected_arrays[0][0] == actual_arrays[0][0]).all())
-        self.assertTrue((expected_arrays[1][0] == actual_arrays[1][0]).all())
+
+        self.assertArrayEqual(expected_arrays[0][0], actual_arrays[0][0])
+        self.assertArrayEqual(expected_arrays[1][0], actual_arrays[1][0])
 
     def testThat_getInputVector_givesVectorsInCorrectDimensions_ForMultipleInputsInMultipleBatchSize(self):
         batch_size = 4
@@ -95,24 +101,28 @@ class NetworkClassTests(unittest.TestCase):
         connection_indices = [(0, 1), (0, 2), (1, 3), (2, 3)]
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         network1 = NetworkArchitecture(layers, connections)
+
         network1.all_layers[1].output_array = [np.zeros([3])] * batch_size
         network1.all_layers[2].output_array = [np.ones([2])] * batch_size
         network1.connections[(1, 3)].weights = np.ones([3, 3])
         network1.connections[(2, 3)].weights = np.ones([3, 2])
         expected_vectors = [[np.zeros([3])] * batch_size, [np.ones([3]) * 2] * batch_size]
         actual_vectors = network1.get_input_arrays_of_a_layer(3)
+
         for i in range(2):
             for j in range(batch_size):
-                self.assertTrue((expected_vectors[i][j] == actual_vectors[i][j]).all())
+                self.assertArrayEqual(expected_vectors[i][j], actual_vectors[i][j])
 
     def testThat_feedForwardAllLayers_givesOutputInCorrectDimensions_forSingleBatchSize(self):
         layers = self.create_list_of_1D_layers_with_sigmoid_activations([3, 3, 2, 3, 4])
         connection_indices = [(0, 1), (0, 2), (1, 3), (2, 4), (3, 4)]
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         network1 = NetworkArchitecture(layers, connections)
+
         expected_last_layer_output = [np.array([0.5] * 4)]
         network1.feed_forward_all_layers([np.array([0, 0, 0])])
-        self.assertTrue((expected_last_layer_output[0] == network1.all_layers[4].output_array[0]).all())
+
+        self.assertArrayEqual(expected_last_layer_output[0], network1.all_layers[4].output_array[0])
 
     def testThat_feedForwardAllLayers_givesOutputInCorrectDimensions_forMultipleBatchSize(self):
         batch_size = 4
@@ -120,36 +130,42 @@ class NetworkClassTests(unittest.TestCase):
         connection_indices = [(0, 1), (0, 2), (1, 3), (2, 4), (3, 4)]
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         network1 = NetworkArchitecture(layers, connections)
+
         expected_last_layer_output = [np.array([0.5] * 4)] * batch_size
         network1.feed_forward_all_layers([np.array([0, 0, 0])] * batch_size)
+
         for i in range(batch_size):
-            self.assertTrue((expected_last_layer_output[i] == network1.all_layers[4].output_array[i]).all())
+            self.assertArrayEqual(expected_last_layer_output[i], network1.all_layers[4].output_array[i])
 
     def testThat_updateDeltaOfLastLayer_givesCorrectLastLayerDelta_forSingleBatchSize(self):
         layers = self.create_list_of_1D_layers_with_sigmoid_activations([3, 3, 2, 3, 3])
         connection_indices = [(0, 1), (0, 2), (1, 3), (2, 4), (3, 4)]
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
+        network1 = NetworkArchitecture(layers, connections)
+
         input_arrays = [np.array([1, 2, 3])]
         actual_y_arrays = [np.array([0, 1, 0])]
         expected_deltas = [np.array([0.5, -0.5, 0.5])]
-        network1 = NetworkArchitecture(layers, connections)
         network1.update_delta_of_last_layer(actual_y_arrays, input_arrays)
         actual_deltas = network1.all_layers[4].delta
-        self.assertTrue((expected_deltas[0] == actual_deltas[0]).all())
+
+        self.assertArrayEqual(expected_deltas[0], actual_deltas[0])
 
     def testThat_updateDeltaOfLastLayer_givesCorrectLastLayerDeltas_forMultipleBatchSize(self):
         batch_size = 3
         layers = self.create_list_of_1D_layers_with_sigmoid_activations([3, 3, 2, 3, 3])
         connection_indices = [(0, 1), (0, 2), (1, 3), (2, 4), (3, 4)]
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
+        network1 = NetworkArchitecture(layers, connections)
+
         input_arrays = [np.array([1, 2, 3])] * batch_size
         actual_y_arrays = [np.array([1, 0, 0]), np.array([0, 1, 0]), np.array([0, 0, 1])]
         expected_deltas = [np.array([-0.5, 0.5, 0.5]), np.array([0.5, -0.5, 0.5]), np.array([0.5, 0.5, -0.5])]
-        network1 = NetworkArchitecture(layers, connections)
         network1.update_delta_of_last_layer(actual_y_arrays, input_arrays)
         actual_deltas = network1.all_layers[4].delta
+
         for i in range(batch_size):
-            self.assertTrue((expected_deltas[i] == actual_deltas[i]).all())
+            self.assertArrayEqual(expected_deltas[i], actual_deltas[i])
 
     def testThat_updateDeltaOfAllLayers_flowsCorrectly_withMultipleSuccessorAndSingleBatchSize(self):
         layers = self.create_list_of_1D_layers_with_sigmoid_activations([3, 3, 2, 3, 3])
@@ -157,12 +173,14 @@ class NetworkClassTests(unittest.TestCase):
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         for index in range(len(connection_indices)):
             connections[index].weights = np.ones(connections[index].weights.shape)
+        network1 = NetworkArchitecture(layers, connections)
+
         input_arrays = [np.array([1, 2, 3])]
         actual_y_arrays = [np.array([0, 1, 0])]
         expected_deltas = [np.array([0.0023, 0.0012, 0.0005])]
-        network1 = NetworkArchitecture(layers, connections)
         network1.update_deltas_of_all_layers(input_arrays, actual_y_arrays, 1)
-        self.assertTrue((expected_deltas[0] == np.around(network1.all_layers[0].delta[0], 4)).all())
+
+        self.assertArrayEqual(expected_deltas[0], np.around(network1.all_layers[0].delta[0], 4))
 
     def testThat_updateDeltaOfAllLayers_flowsCorrectly_withMultipleSuccessorAndMultipleBatchSize(self):
         batch_size = 4
@@ -171,13 +189,15 @@ class NetworkClassTests(unittest.TestCase):
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         for index in range(len(connection_indices)):
             connections[index].weights = np.ones(connections[index].weights.shape)
+        network1 = NetworkArchitecture(layers, connections)
+
         input_arrays = [np.array([1, 2, 3])] * batch_size
         actual_y_arrays = [np.array([0, 1, 0])] * batch_size
         expected_deltas = [np.array([0.0023, 0.0012, 0.0005])] * batch_size
-        network1 = NetworkArchitecture(layers, connections)
         network1.update_deltas_of_all_layers(input_arrays, actual_y_arrays, batch_size)
+
         for i in range(batch_size):
-            self.assertTrue((expected_deltas[i] == np.around(network1.all_layers[0].delta[i], 4)).all())
+            self.assertArrayEqual(expected_deltas[i], np.around(network1.all_layers[0].delta[i], 4))
 
     def testThat_updateDeltaOfAllLayers_flowsCorrectly_withSingleInputSingleBatchSizeAndSingleNeuronInLastLayer(self):
         layers = self.create_list_of_1D_layers_with_sigmoid_activations([3, 3, 2, 3, 1])
@@ -185,12 +205,14 @@ class NetworkClassTests(unittest.TestCase):
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         for index in range(len(connection_indices)):
             connections[index].weights = np.ones(connections[index].weights.shape)
+        network1 = NetworkArchitecture(layers, connections)
+
         input_arrays = [np.zeros([3])]
         actual_y_arrays = [np.ones([1])]
         expected_delta = [np.array([-0.0064, -0.0064, -0.0064])]
-        network1 = NetworkArchitecture(layers, connections)
         network1.update_deltas_of_all_layers(input_arrays, actual_y_arrays, 1)
-        self.assertTrue((expected_delta[0] == np.round(network1.all_layers[0].delta[0], 4)).all())
+
+        self.assertArrayEqual(expected_delta[0], np.round(network1.all_layers[0].delta[0], 4))
 
     def testThat_updateDeltaOfAllLayers_flowsCorrectly_withMultipleInputSingleBatchSizeAndSingleNeuronInLastLayer(self):
         batch_size = 4
@@ -199,13 +221,15 @@ class NetworkClassTests(unittest.TestCase):
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         for index in range(len(connection_indices)):
             connections[index].weights = np.ones(connections[index].weights.shape)
+        network1 = NetworkArchitecture(layers, connections)
+
         input_arrays = [np.zeros([3])] * batch_size
         actual_y_arrays = [np.ones([1])] * batch_size
         expected_delta = [np.array([-0.0064, -0.0064, -0.0064])] * batch_size
-        network1 = NetworkArchitecture(layers, connections)
         network1.update_deltas_of_all_layers(input_arrays, actual_y_arrays, batch_size)
+
         for i in range(batch_size):
-            self.assertTrue((expected_delta[i] == np.round(network1.all_layers[0].delta[i], 4)).all())
+            self.assertArrayEqual(expected_delta[i], np.round(network1.all_layers[0].delta[i], 4))
 
     def testThat_backPropagate_flowsCorrectly_withSingleBatchSize(self):
         layers = self.create_list_of_1D_layers_with_sigmoid_activations([3, 3, 2, 3, 3])
@@ -213,15 +237,17 @@ class NetworkClassTests(unittest.TestCase):
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         for index in range(len(connection_indices)):
             connections[index].weights = np.ones(connections[index].weights.shape)
+        network1 = NetworkArchitecture(layers, connections)
+
         input_arrays = [np.zeros([3])]
         actual_y_arrays = [np.array([0, 1, 0])]
         training_data = [(input_arrays[0], actual_y_arrays[0])]
         expected_gradient_for_biases = np.array([0.3986, 0.3986, 0.3986])
         expected_gradient_for_weights = np.array([[0, 0, 0], [0, 0, 0]])
-        network1 = NetworkArchitecture(layers, connections)
         gradient_for_biases, gradient_for_weights = network1.back_propagate_all_layers(training_data, 1)
-        self.assertTrue((expected_gradient_for_biases == np.round(gradient_for_biases[0], 4)).all())
-        self.assertTrue((expected_gradient_for_weights == np.round(gradient_for_weights[(0, 2)], 4)).all())
+
+        self.assertArrayEqual(expected_gradient_for_biases, np.round(gradient_for_biases[0], 4))
+        self.assertArrayEqual(expected_gradient_for_weights, np.round(gradient_for_weights[(0, 2)], 4))
 
     def testThat_backPropagate_flowsCorrectly_withMultipleBatchSize(self):
         batch_size = 4
@@ -230,15 +256,17 @@ class NetworkClassTests(unittest.TestCase):
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         for index in range(len(connection_indices)):
             connections[index].weights = np.ones(connections[index].weights.shape)
+        network1 = NetworkArchitecture(layers, connections)
+
         input_arrays = [np.zeros([3])] * batch_size
         actual_y_arrays = [np.array([0, 1, 0])] * batch_size
         training_data = [(input_arrays[i], actual_y_arrays[i]) for i in range(batch_size)]
         expected_gradient_for_biases = np.array([1.5942, 1.5942, 1.5942])
         expected_gradient_for_weights = np.array([[0, 0, 0], [0, 0, 0]])
-        network1 = NetworkArchitecture(layers, connections)
         gradient_for_biases, gradient_for_weights = network1.back_propagate_all_layers(training_data, batch_size)
-        self.assertTrue((expected_gradient_for_biases == np.round(gradient_for_biases[0], 4)).all())
-        self.assertTrue((expected_gradient_for_weights == np.round(gradient_for_weights[(0, 2)], 4)).all())
+
+        self.assertArrayEqual(expected_gradient_for_biases, np.round(gradient_for_biases[0], 4))
+        self.assertArrayEqual(expected_gradient_for_weights, np.round(gradient_for_weights[(0, 2)], 4))
 
     def testThat_backPropagate_flowsCorrectly_withSingleBatchSizeAndSingleNeuronInLastLayer(self):
         layers = self.create_list_of_1D_layers_with_sigmoid_activations([3, 1, 2, 3, 1])
@@ -246,15 +274,17 @@ class NetworkClassTests(unittest.TestCase):
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         for index in range(len(connection_indices)):
             connections[index].weights = np.ones(connections[index].weights.shape)
+        network1 = NetworkArchitecture(layers, connections)
+
         input_arrays = [np.zeros([3])]
         actual_y_arrays = [np.ones([1])]
         training_data = [(input_arrays[0], actual_y_arrays[0])]
         expected_gradient_for_biases = np.array([-0.0091, -0.0091, -0.0091])
         expected_gradient_for_weights = np.array([[0, 0, 0], [0, 0, 0]])
-        network1 = NetworkArchitecture(layers, connections)
         gradient_for_biases, gradient_for_weights = network1.back_propagate_all_layers(training_data, 1)
-        self.assertTrue((expected_gradient_for_biases == np.round(gradient_for_biases[0], 4)).all())
-        self.assertTrue((expected_gradient_for_weights == np.round(gradient_for_weights[(0, 2)], 4)).all())
+
+        self.assertArrayEqual(expected_gradient_for_biases, np.round(gradient_for_biases[0], 4))
+        self.assertArrayEqual(expected_gradient_for_weights, np.round(gradient_for_weights[(0, 2)], 4))
 
     def testThat_backPropagate_flowsCorrectly_withMultipleBatchSizeAndSingleNeuronInLastLayer(self):
         batch_size = 4
@@ -263,15 +293,84 @@ class NetworkClassTests(unittest.TestCase):
         connections = self.create_list_of_connections_having_fully_connection_type(layers, connection_indices)
         for index in range(len(connection_indices)):
             connections[index].weights = np.ones(connections[index].weights.shape)
+        network1 = NetworkArchitecture(layers, connections)
+
         input_arrays = [np.zeros([3])] * batch_size
         actual_y_arrays = [np.ones([1])] * batch_size
         training_data = [(input_arrays[i], actual_y_arrays[i]) for i in range(batch_size)]
         expected_gradient_for_biases = np.array([-0.0364, -0.0364, -0.0364])
         expected_gradient_for_weights = np.array([[0, 0, 0], [0, 0, 0]])
-        network1 = NetworkArchitecture(layers, connections)
         gradient_for_biases, gradient_for_weights = network1.back_propagate_all_layers(training_data, batch_size)
-        self.assertTrue((expected_gradient_for_biases == np.round(gradient_for_biases[0], 4)).all())
-        self.assertTrue((expected_gradient_for_weights == np.round(gradient_for_weights[(0, 2)], 4)).all())
+
+        self.assertArrayEqual(expected_gradient_for_biases, np.round(gradient_for_biases[0], 4))
+        self.assertArrayEqual(expected_gradient_for_weights, np.round(gradient_for_weights[(0, 2)], 4))
+
+    def testThat_backPropagate_flowsCorrectly_for3DLayersWithSingleBatchSize(self):
+        # 3D representation of fully connected feed forward network
+        layer0 = Layer(id=0, shape=[2, 3, 2], activation=Sigmoid())
+        layer1 = Layer(id=1, shape=[3, 2, 3], activation=Sigmoid())
+        layer2 = Layer(id=2, shape=[2], activation=Sigmoid())
+        layers_3d = [layer0, layer1, layer2]
+        connection_indices = [(0, 1), (1, 2)]
+        connections_3d = self.create_list_of_connections_having_fully_connection_type(layers_3d, connection_indices)
+        for index in range(len(connection_indices)):
+            connections_3d[index].weights = np.ones(connections_3d[index].weights.shape)
+        input_arrays_3d = [np.zeros([2, 3, 2])]
+        actual_y_arrays = [np.array([0, 1])]
+        training_data_3d = [(input_arrays_3d[0], actual_y_arrays[0])]
+        network1 = NetworkArchitecture(layers_3d, connections_3d)
+        bias_grad_3d, weight_grad_3d = network1.back_propagate_all_layers(training_data_3d, 1)
+
+        # 1D representation of same feed forward network
+        layers_1d = self.create_list_of_1D_layers_with_sigmoid_activations([12, 18, 2])
+        connections_1d = self.create_list_of_connections_having_fully_connection_type(layers_1d, connection_indices)
+        for index in range(len(connection_indices)):
+            connections_1d[index].weights = np.ones(connections_1d[index].weights.shape)
+        input_arrays_1d = [np.zeros([12])]
+        actual_y_arrays = [np.array([0, 1])]
+        training_data_1d = [(input_arrays_1d[0], actual_y_arrays[0])]
+        network2 = NetworkArchitecture(layers_1d, connections_1d)
+        bias_grad_1d, weight_grad_1d = network2.back_propagate_all_layers(training_data_1d, 1)
+
+        for i in range(3):
+            self.assertArrayEqual(bias_grad_3d[i].reshape(layers_1d[i].shape), bias_grad_1d[i])
+        for i in range(2):
+            self.assertArrayEqual(weight_grad_3d[(i, i + 1)].reshape(connections_1d[i].weights.shape),
+                                  weight_grad_1d[(i, i + 1)])
+
+    def testThat_backPropagate_flowsCorrectly_for3DLayersWithMultipleBatchSizeAndSingleNeuronInLastLayer(self):
+        batch_size = 4
+        # 3D representation of fully connected feed forward network
+        layer0 = Layer(id=0, shape=[2, 3, 2], activation=Sigmoid())
+        layer1 = Layer(id=1, shape=[3, 2, 3], activation=Sigmoid())
+        layer2 = Layer(id=2, shape=[2], activation=Sigmoid())
+        layers_3d = [layer0, layer1, layer2]
+        connection_indices = [(0, 1), (1, 2)]
+        connections_3d = self.create_list_of_connections_having_fully_connection_type(layers_3d, connection_indices)
+        for index in range(len(connection_indices)):
+            connections_3d[index].weights = np.ones(connections_3d[index].weights.shape)
+        input_arrays_3d = [np.zeros([2, 3, 2])] * batch_size
+        actual_y_arrays = [np.array([0, 1])] * batch_size
+        training_data_3d = [(input_arrays_3d[i], actual_y_arrays[i]) for i in range(batch_size)]
+        network1 = NetworkArchitecture(layers_3d, connections_3d)
+        bias_grad_3d, weight_grad_3d = network1.back_propagate_all_layers(training_data_3d, batch_size)
+
+        # 1D representation of same feed forward network
+        layers_1d = self.create_list_of_1D_layers_with_sigmoid_activations([12, 18, 2])
+        connections_1d = self.create_list_of_connections_having_fully_connection_type(layers_1d, connection_indices)
+        for index in range(len(connection_indices)):
+            connections_1d[index].weights = np.ones(connections_1d[index].weights.shape)
+        input_arrays_1d = [np.zeros([12])] * batch_size
+        actual_y_arrays = [np.array([0, 1])] * batch_size
+        training_data_1d = [(input_arrays_1d[i], actual_y_arrays[i]) for i in range(batch_size)]
+        network2 = NetworkArchitecture(layers_1d, connections_1d)
+        bias_grad_1d, weight_grad_1d = network2.back_propagate_all_layers(training_data_1d, batch_size)
+
+        for i in range(3):
+            self.assertArrayEqual(bias_grad_3d[i].reshape(layers_1d[i].shape), bias_grad_1d[i])
+        for i in range(2):
+            self.assertArrayEqual(weight_grad_3d[(i, i + 1)].reshape(connections_1d[i].weights.shape),
+                                  weight_grad_1d[(i, i + 1)])
 
     # def test_mnist_test(self):
     #     all_data = fetch_mldata(data_home="/Users/Swapnil/Analytics/Personal Projects/MNIST Exp/",

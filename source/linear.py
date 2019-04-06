@@ -16,19 +16,35 @@ class Linear(Transformation):
         self.transposed_input_axes, self.weight_gradient_axes = self.get_gradient_parameters()
 
     def get_forward_propagation_parameters(self) -> ([int], int):
+        """
+        :return: "Shape of the weights to be used for linear transformation" and "transformation axis required for
+        tensordot product during forward propagation".
+
+        LOGIC: For a fully-connected connection, shape of weight is cumulative shape of output layer and input layer.
+        Moreover, transformation axis is the dimension of input layer itself. For example, if input layer has a shape of
+        (i1, i2, i3) and output layer has a shape of (o1, o2), the weights would be 5-dimensional tensor having shape of
+        (o1, o2, i1, i2, i3). Here tensordot axis should be 3. This means that in calculation of O = W.I,  last 3 axis
+        of weights and first 3 axis of input would be summed over, leaving an output of shape (o1, o2).
+
+        For an optimally-connected connection, we need to decide which all axis in input and out are common, so that the
+        shape of weights may exclude those dimensions. For example, consider the case of input having shape (i1, i2, c1,
+        c2) and output having shape (o1, c1, c2). In a fully connected scenario, the weights would be a  7-dimensional
+        tensor with shape (o1, c1, c2, i1, i2, c1, c2) and we would take the tensordot with transformation axis as 4.
+        In optimally connected scenario, we can do with only 3-dimensional weights having a shape of (o1, i1, i2) and
+        taking tensordot product with transformation axis as 2. here, we need to identify how many axis in input shape
+        and out shape has common dimensions from the end. In this example last two axis has same dimension (c1, c2). So,
+        these two dimensions can be left out of summation for tensordot product calculation.
+        """
+
         if self.connection_type == "fully":
             weights_shape = self.output_layer_shape + self.input_layer_shape
             transformation_axis = len(self.input_layer_shape)
             return weights_shape, transformation_axis
 
-        # TODO: try finding a better way for below code piece
-        max_loop_length = min(len(self.input_layer_shape), len(self.output_layer_shape))
-        common_dimension_length = 0
-        for i in range(max_loop_length):
-            if self.input_layer_shape[-(i + 1)] == self.output_layer_shape[-(i + 1)]:
-                common_dimension_length += 1
-            else:
-                break
+        zipped_dim = list(zip(reversed(self.input_layer_shape), reversed(self.output_layer_shape)))
+        mismatched_axes = [i for i, shape in enumerate(zipped_dim) if shape[0] != shape[1]]
+        common_dimension_length = len(zipped_dim) if len(mismatched_axes) == 0 else mismatched_axes[0]
+
         weights_shape = self.output_layer_shape[:(len(self.output_layer_shape) - common_dimension_length)] \
                         + self.input_layer_shape[:(len(self.input_layer_shape) - common_dimension_length)]
 
@@ -68,6 +84,7 @@ class Linear(Transformation):
                             in input_array]
             return transformed_input
         """
+
         batch_size = len(input_array)
         input_array = np.concatenate(input_array, axis=0).reshape([batch_size] + list(self.input_layer_shape))
         input_array_axes = list(np.arange(len(input_array.shape)))
@@ -112,7 +129,7 @@ class Linear(Transformation):
         for other kind of combinations, it needs to be modified. It also need modification if layers are optimally
         connected with weights and are not fully connected.
 
-        TODO: Revisit the logic as per above discussion, for no-fully-connected and multiple connection layers.
+        TODO: Apply the logic as per above discussion for no-fully-connected and multiple connection layers. Add Tests.
 
         LOGIC: Following piece of code can be used instead of actual code, if parallel processing is implemented in some
         other ways:
@@ -128,6 +145,7 @@ class Linear(Transformation):
                                  range(len(transformed_input))]  # Hadamard Product
 
         """
+
         batch_size = len(output_layer_delta)
         output_layer_delta = np.concatenate(output_layer_delta, axis=0).reshape(
             [batch_size] + list(self.output_layer_shape))
@@ -162,6 +180,7 @@ class Linear(Transformation):
             gradient_for_weights = [np.tensordot(output_layer_delta[i], transposed_predecessor_output[i],
                                                  axes=self.weight_gradient_axes) for i in range(len(output_layer_delta))]
         """
+
         batch_size = len(output_layer_delta)
         output_layer_delta = np.concatenate(output_layer_delta, axis=0).reshape(
             [batch_size] + list(self.output_layer_shape))

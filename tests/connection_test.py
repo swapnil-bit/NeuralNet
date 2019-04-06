@@ -1,11 +1,14 @@
 from source.layer import Layer
-# from source.transformation import Transformation, Linear
 from source.connection import Connection
 import numpy as np
 import unittest
 
 
 class ConnectionClassTests(unittest.TestCase):
+    @staticmethod
+    def assertArrayEqual(expected, actual):
+        return np.testing.assert_array_equal(actual, expected)
+
     def testThat_getOptimumWeightsShape_calculatesShapeCorrectly_forVariousInputAndOutputShapes(self):
         input_shapes = [[10], [2], [2], [2], [2], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3],
                         [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4],
@@ -33,7 +36,7 @@ class ConnectionClassTests(unittest.TestCase):
         connection = Connection(from_layer, to_layer)
         actual_weights = connection.initialize_weights(np.array([]), "zeros")
         expected_weights = np.zeros([2, 3, 3, 4, 3])
-        self.assertTrue((expected_weights == actual_weights).all())
+        self.assertArrayEqual(expected_weights, actual_weights)
 
     def testThat_getWeights_assignsWeightsCorrectly_for3DInputAnd2DOutputLayers(self):
         from_layer = Layer(0, [4, 3, 2])
@@ -41,4 +44,4 @@ class ConnectionClassTests(unittest.TestCase):
         connection = Connection(from_layer, to_layer, connection_type="optimal")
         actual_weights = connection.initialize_weights(np.ones([4, 4, 3]), "zeros")
         expected_weights = np.ones([4, 4, 3])
-        self.assertTrue((expected_weights == actual_weights).all())
+        self.assertArrayEqual(expected_weights, actual_weights)

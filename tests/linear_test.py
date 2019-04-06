@@ -6,6 +6,10 @@ import unittest
 
 class LinearTransformationClassTests(unittest.TestCase):
     @staticmethod
+    def assertArrayEqual(expected, actual):
+        return np.testing.assert_array_equal(actual, expected)
+
+    @staticmethod
     def get_test_data_for_various_input_and_output_shapes():
         input_shapes = [[10], [2], [2], [2], [2], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3],
                         [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4], [2, 3, 4],
@@ -135,7 +139,7 @@ class LinearTransformationClassTests(unittest.TestCase):
         expected_output = [np.array([[2, 5], [1, 1], [2, 2]])]
         transformation2 = Linear(connection_type="optimal", input_layer_shape=[3], output_layer_shape=[3, 2])
         actual_output = transformation2.transform(input_array, weight_array)
-        self.assertTrue((actual_output[0] == expected_output[0]).all())
+        self.assertArrayEqual(expected_output[0], actual_output[0])
 
     def testThat_transformFunction_givesCorrectTransformation_withOptimallyConnected2DInputAnd3DOutputLayers(self):
         # Example: input_shape = [3,2], output_shape= [3,2,2] => weights_shape = [3,2,3]; FP_axes = 1
@@ -148,7 +152,7 @@ class LinearTransformationClassTests(unittest.TestCase):
                                      [[1, 3], [2, 2]]])]
         transformation2 = Linear(connection_type="optimal", input_layer_shape=[3, 2], output_layer_shape=[3, 2, 2])
         actual_output = transformation2.transform(input_array, weight_array)
-        self.assertTrue((actual_output[0] == expected_output[0]).all())
+        self.assertArrayEqual(expected_output[0], actual_output[0])
 
     def testThat_transformFunction_givesCorrectTransformation_withOptimallyConnected3DInputAnd1DOutputLayers(self):
         # Example: input_shape = [3,2,2], output_shape = [4,] => weights_shape = [4,3,2,2]; FP_axes = 3
@@ -162,7 +166,7 @@ class LinearTransformationClassTests(unittest.TestCase):
         expected_output = [np.array([15, 11, 14, 14])]
         transformation2 = Linear(connection_type="optimal", input_layer_shape=[3, 2, 2], output_layer_shape=[4])
         actual_output = transformation2.transform(input_array, weight_array)
-        self.assertTrue((actual_output[0] == expected_output[0]).all())
+        self.assertArrayEqual(expected_output[0], actual_output[0])
 
     def testThat_transformFunction_givesCorrectTransformation_withFullyConnected2DLayers(self):
         # Example: input_shape = [2,2], output_shape = [3,2] => weights_shape = [3,2,2,2]; FP_axes = 2
@@ -173,7 +177,7 @@ class LinearTransformationClassTests(unittest.TestCase):
         expected_output = [np.array([[6, 4], [7, 2], [7, 3]])]
         transformation2 = Linear(connection_type="fully", input_layer_shape=[2, 2], output_layer_shape=[3, 2])
         actual_output = transformation2.transform(input_array, weight_array)
-        self.assertTrue((np.around(actual_output[0], 3) == expected_output[0]).all())
+        self.assertArrayEqual(expected_output[0], np.around(actual_output[0], 3))
 
     # ========== BACK PROPAGATION PARAMETERS TESTS ========== #
 
@@ -243,7 +247,7 @@ class LinearTransformationClassTests(unittest.TestCase):
         transformation4 = Linear("optimal", list(transformed_input[0].shape), list(output_layer_delta[0].shape))
         actual_input_layer_delta = transformation4.back_propagate_delta(output_layer_delta, weights, activation,
                                                                         transformed_input)
-        self.assertTrue((np.around(actual_input_layer_delta[0], 2) == expected_input_layer_delta[0]).all())
+        self.assertArrayEqual(expected_input_layer_delta[0], np.around(actual_input_layer_delta[0], 2))
 
     def testThat_backPropagateDelta_givesCorrectDelta_withOptimallyConnected2DInputAnd3DOutputLayers(self):
         # Example: from_layer.shape = [3,2], to_layer.shape = [2,3,2] => weights.shape = [2,]; axis_length = 0
@@ -259,7 +263,7 @@ class LinearTransformationClassTests(unittest.TestCase):
         transformation4 = Linear("optimal", list(transformed_input[0].shape), list(output_layer_delta[0].shape))
         actual_input_layer_delta = transformation4.back_propagate_delta(output_layer_delta, weights, activation,
                                                                         transformed_input)
-        self.assertTrue((np.around(actual_input_layer_delta[0], 3) == expected_input_layer_delta[0]).all())
+        self.assertArrayEqual(expected_input_layer_delta[0], np.around(actual_input_layer_delta[0], 3))
 
     def testThat_backPropagateDelta_givesCorrectDelta_withOptimallyConnected3DInputAnd1DOutputLayers(self):
         # Example: from_layer.shape = [3,2,2], to_layer.shape = [4,] => weights.shape = [4,3,2,2]; axis_length = 1
@@ -280,7 +284,7 @@ class LinearTransformationClassTests(unittest.TestCase):
         transformation4 = Linear("optimal", list(transformed_input[0].shape), list(output_layer_delta[0].shape))
         actual_input_layer_delta = transformation4.back_propagate_delta(output_layer_delta, weights, activation,
                                                                         transformed_input)
-        self.assertTrue((np.around(actual_input_layer_delta[0], 3) == expected_input_layer_delta[0]).all())
+        self.assertArrayEqual(expected_input_layer_delta[0], np.around(actual_input_layer_delta[0], 3))
 
     def testThat_backPropagateDelta_givesCorrectDelta_withFullyConnected2DLayers(self):
         # Example: from_layer.shape = [2,2], to_layer.shape = [3,2] => weights.shape = [3,2,2,2]; axis_length = 2
@@ -296,7 +300,7 @@ class LinearTransformationClassTests(unittest.TestCase):
         transformation4 = Linear("fully", list(transformed_input[0].shape), list(output_layer_delta[0].shape))
         actual_input_layer_delta = transformation4.back_propagate_delta(output_layer_delta, weights, activation,
                                                                         transformed_input)
-        self.assertTrue((np.around(actual_input_layer_delta[0], 3) == expected_input_layer_delta[0]).all())
+        self.assertArrayEqual(expected_input_layer_delta[0], np.around(actual_input_layer_delta[0], 3))
 
     # ========== GRADIENT PARAMETERS TESTS ========== #
 
@@ -334,7 +338,7 @@ class LinearTransformationClassTests(unittest.TestCase):
                                       activated_input[0].reshape([1, 2]))
         transformation6 = Linear("optimal", list(activated_input[0].shape), list(output_layer_delta[0].shape))
         actual_gradient_for_weights = transformation6.get_gradient_for_weights(output_layer_delta, activated_input)
-        self.assertTrue((actual_gradient_for_weights == old_method_gradients).all())
+        self.assertArrayEqual(old_method_gradients, actual_gradient_for_weights)
 
     def testThat_LinearTransformation_givesCorrectWeightsGradient_with1DFromLayerAnd3DToLayer_optimalConnection(self):
         # Example: from_layer.shape = [2,], to_layer.shape = [3,2,2] => weights.shape = [3,2]; axis_length = 1
@@ -343,4 +347,4 @@ class LinearTransformationClassTests(unittest.TestCase):
         expected_gradient_for_weights = np.array([[2, 8], [14, 20], [26, 32]])
         transformation6 = Linear("optimal", list(activated_input[0].shape), list(output_layer_delta[0].shape))
         actual_gradient_for_weights = transformation6.get_gradient_for_weights(output_layer_delta, activated_input)
-        self.assertTrue((actual_gradient_for_weights == expected_gradient_for_weights).all())
+        self.assertArrayEqual(expected_gradient_for_weights, actual_gradient_for_weights)

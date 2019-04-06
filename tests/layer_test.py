@@ -5,6 +5,10 @@ import unittest
 
 
 class LayerClassTests(unittest.TestCase):
+    @staticmethod
+    def assetArrayEqual(expected, actual):
+        return np.testing.assert_array_equal(actual, expected)
+
     def testThat_setInputArray_and_setOutputArray_givesCorrectOutputs_for1DLayerShape(self):
         layer_one = Layer(0, [2], activation=LinearDouble())
         input_arrays = [[np.array([1, 2])], [np.array([3, 4])], [np.array([0, 1])], [np.array([2, 3])]]
@@ -15,8 +19,8 @@ class LayerClassTests(unittest.TestCase):
         layer_one.set_input_array(input_arrays)
         layer_one.set_output_array()
 
-        self.assertTrue((expected_input_array[0] == layer_one.input_array[0]).all())
-        self.assertTrue((expected_output_array[0] == layer_one.output_array[0]).all())
+        self.assetArrayEqual(expected_input_array[0], layer_one.input_array[0])
+        self.assetArrayEqual(expected_output_array[0], layer_one.output_array[0])
 
     def testThat_setInputArray_and_setOutputArray_givesCorrectOutputs_for1DCollapsibleLayerShape(self):
         layer_one = Layer(0, [2, 1], activation=LinearDouble())
@@ -28,8 +32,8 @@ class LayerClassTests(unittest.TestCase):
         layer_one.set_input_array(input_arrays)
         layer_one.set_output_array()
 
-        self.assertTrue((expected_input_array[0] == layer_one.input_array[0]).all())
-        self.assertTrue((expected_output_array[0] == layer_one.output_array[0]).all())
+        self.assetArrayEqual(expected_input_array[0], layer_one.input_array[0])
+        self.assetArrayEqual(expected_output_array[0], layer_one.output_array[0])
 
     def testThat_setInputArray_and_setOutputArray_givesCorrectOutputs_for2DLayerShape(self):
         layer_one = Layer(0, [2, 3], activation=LinearDouble())
@@ -41,5 +45,5 @@ class LayerClassTests(unittest.TestCase):
         layer_one.set_input_array(input_arrays)
         layer_one.set_output_array()
 
-        self.assertTrue((expected_input_array[0] == layer_one.input_array[0]).all())
-        self.assertTrue((expected_output_array[0] == layer_one.output_array[0]).all())
+        self.assetArrayEqual(expected_input_array[0], layer_one.input_array[0])
+        self.assetArrayEqual(expected_output_array[0], layer_one.output_array[0])

@@ -4,6 +4,10 @@ import unittest
 
 
 class LossClassTests(unittest.TestCase):
+    @staticmethod
+    def assertArrayEqual(expected, actual):
+        return np.testing.assert_array_equal(actual, expected)
+
     def testThat_CrossEntropy_Function_givesCorrectOutput_for1DArrayAndSingleBatchSize(self):
         actual_y_array = [np.array([1, 0, 1])]
         predicted_y_array = [np.array([0.9, 0.1, 0.9])]
@@ -47,7 +51,7 @@ class LossClassTests(unittest.TestCase):
         expected_delta = [predicted_y_array[i] - actual_y_array[i] for i in range(len(predicted_y_array))]
         loss1 = CrossEntropy()
         actual_delta = loss1.get_delta_last_layer(predicted_y_array, actual_y_array)
-        self.assertTrue((actual_delta[0] == expected_delta[0]).all())
+        self.assertArrayEqual(expected_delta[0], actual_delta[0])
 
     def testThat_MeanSquare_Function_givesCorrectOutput(self):
         actual_y_array = [np.array([1, 0, 1])]
@@ -63,4 +67,4 @@ class LossClassTests(unittest.TestCase):
         expected_delta = [predicted_y_array[i] - actual_y_array[i] for i in range(len(predicted_y_array))]
         loss2 = MeanSquare()
         actual_delta = loss2.get_delta_last_layer(predicted_y_array, actual_y_array)
-        self.assertTrue((actual_delta[0] == expected_delta[0]).all())
+        self.assertArrayEqual(expected_delta[0], actual_delta[0])

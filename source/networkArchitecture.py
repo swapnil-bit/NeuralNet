@@ -85,7 +85,6 @@ class NetworkArchitecture:
             delta_sum = sum(layer.delta)
             gradient_for_biases[layer.id] += delta_sum
         for connection in self.connections.values():
-            # TODO: Need to write tests for below code to check compatibility with multiple tensor shapes
             gradient_for_weights[connection.id] += connection.get_gradient_for_weights()
         return gradient_for_biases, gradient_for_weights
 
