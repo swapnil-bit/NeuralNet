@@ -38,7 +38,7 @@ class MeanSquare(Loss):
         return loss
 
     def get_delta_last_layer(self, predicted_y: [np.array], actual_y: [np.array]) -> [np.array]:
-        # value is same as cost_derivative * sigmoid_derivative for cross_entropy cost function
+        # TODO: To be corrected. Currently written same as CrossEntropy.
         actual_y = [y.reshape(predicted_y[0].shape) for y in actual_y]
         last_layer_delta = [predicted_y[i] - actual_y[i] for i in range(len(predicted_y))]
         return last_layer_delta
